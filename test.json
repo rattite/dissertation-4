@@ -1,0 +1,39 @@
+[
+    {
+        "case": "naive_case",
+        "data": {
+            "times": [],
+            "label": "Naive"
+        }
+    },
+    {
+        "case": "m1_case",
+        "data": {
+            "times": [],
+            "ind_depth": "6",
+            "pnum": "16",
+            "label": "M1"
+        }
+    },
+    {
+        "case": "m2_case",
+        "data": {
+            "times": [],
+            "ind_depth": "4",
+            "min_leaf": "256",
+            "label": "M2"
+        }
+    },
+    {
+        "case": "m3_case",
+        "data": {
+            "times": [],
+            "b_min": "4",
+            "b_dep": "256",
+            "c_min": "4",
+            "c_dep": "64",
+            "clus": "data/large.lizard",
+            "label": "M3"
+        }
+    }
+]
