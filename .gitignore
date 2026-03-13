@@ -1,6 +1,8 @@
+token
 data/
 bin/
 __pycache__/
 *.txt
 *.o
 *.d
+img/
