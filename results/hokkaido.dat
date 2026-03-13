@@ -1,0 +1,67 @@
+[
+    {
+        "case": "naive_case",
+        "data": {
+            "times": [
+                1.249442571,
+                1.449346557,
+                1.326111691
+            ],
+            "label": "Naive"
+        }
+    },
+    {
+        "case": "index_case",
+        "data": {
+            "times": [
+                1.204044602,
+                5.963296199,
+                1.133048644
+            ],
+            "ind_depth": "6",
+            "label": "Hilbert"
+        }
+    },
+    {
+        "case": "m1_case",
+        "data": {
+            "times": [
+                0.434116565,
+                0.431315889,
+                0.462960869
+            ],
+            "ind_depth": "6",
+            "pnum": "16",
+            "label": "M1"
+        }
+    },
+    {
+        "case": "m2_case",
+        "data": {
+            "times": [
+                0.135277007,
+                0.114968956,
+                0.087328805
+            ],
+            "ind_depth": "4",
+            "min_leaf": "256",
+            "label": "M2"
+        }
+    },
+    {
+        "case": "m3_case",
+        "data": {
+            "times": [
+                0.080919467,
+                0.070719247,
+                0.073491017
+            ],
+            "b_min": "4",
+            "b_dep": "256",
+            "c_min": "4",
+            "c_dep": "256",
+            "clus": "data/hokkaido.lizard",
+            "label": "M3"
+        }
+    }
+]

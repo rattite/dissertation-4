@@ -11,8 +11,8 @@ DATA_DIR = data
 OBJS = $(addprefix $(BIN_DIR)/, curve.o db.o grid.o m1.o m2.o m3.o test_helper.o)
 
 # Targets
-TEST_BINS = naivetest indextest m1test m2test m3test reset draw_bboxes draw_3 curvetest query_gen
-DATA_BINS = process getpoints
+TEST_BINS = naivetest indextest m1test m2test m3test reset draw_bboxes draw_3 curvetest query_gen 
+DATA_BINS = process getpoints clean_db
 
 # Final paths for targets
 ALL_TARGETS = $(addprefix $(BIN_DIR)/, $(TEST_BINS)) $(addprefix $(DATA_DIR)/, $(DATA_BINS))

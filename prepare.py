@@ -35,6 +35,9 @@ def add_col(name):
 def gp(name):
     subprocess.run(["bin/getpoints","data/"+name+".sqlite",name,"cent", "data/"+name+".dat"])
 
+def clean(name):
+    subprocess.run(["data/clean_db","data/"+name+".sqlite",name,"cent"])
+
 #takes a raw geojson file, converts it and prepares it
 
 if len(sys.argv) < 2:
@@ -44,5 +47,6 @@ name = sys.argv[1]
 convert("data/"+name+".geojson", "data/"+name+".sqlite", name)
 add_col(name)
 gp(name)
+clean(name)
 print("COMPLETED!")
 
