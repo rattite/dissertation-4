@@ -35,9 +35,6 @@ $(BIN_DIR)/%: $(SRC_DIR)/%.c $(OBJS)
 $(DATA_DIR)/%: $(SRC_DIR)/%.c $(OBJS)
 	$(CC) $(CFLAGS) $< $(OBJS) -o $@ $(LIBS)
 
-# Special case for 'reset' (it only needs test_helper.o based on your original file)
-$(BIN_DIR)/reset: $(SRC_DIR)/reset.c $(BIN_DIR)/test_helper.o
-	$(CC) $(CFLAGS) $^ -o $@ $(LIBS)
 
 clean:
 	rm -rf $(BIN_DIR)/*.o $(BIN_DIR)/*.d $(ALL_TARGETS)

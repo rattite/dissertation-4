@@ -38,6 +38,8 @@ int main(int argc, char *argv[]){
 
 	if (argc == 1){
 		sqlite3 *db = setup_db("data/large.sqlite");
+		destroy_part_structure(db,"large",64);
+
 		//sets up index
 		add_index(db,"large","cent",base,"arg1",4);
 		int count = 0;
@@ -48,7 +50,7 @@ int main(int argc, char *argv[]){
 		partition_col_by_index_ranges(db,"large","cent","arg1",r,base,4);
 		//do dummy query to warm up the database
     		clock_gettime(CLOCK_MONOTONIC, &start);
-		beter(db, "large", "cent", "arg1", -460000, 6625000, 20000, 100000, base, 0,4);
+		beter2(db, "large", "cent", "arg1", -460000, 6625000, 20000, 100000, base, 0,4);
     		clock_gettime(CLOCK_MONOTONIC, &end);
     		double elapsed = (end.tv_sec - start.tv_sec) +(end.tv_nsec - start.tv_nsec) / 1e9;
 		printf("clock strikes 12 midnight arrives %.9f seconds\n", elapsed);
@@ -57,6 +59,7 @@ int main(int argc, char *argv[]){
 
 		//shuts down index
 		remove_index_col(db,"large","arg1");
+		destroy_part_structure(db,"large",64);
 		sqlite3_close(db);
 
 	} else{
@@ -78,7 +81,7 @@ int main(int argc, char *argv[]){
 			rangelist *r = make_partitions_by_population(indx, rangeno, count,depth,4); 
 			partition_col_by_index_ranges(db,argv[2],argv[3],"test",r,base,depth);
 			
-			beter(db, argv[2], argv[3], "test", q[0]->x, q[0]->y, q[0]->rad, 100000, base, 0,depth);
+			beter2(db, argv[2], argv[3], "test", q[0]->x, q[0]->y, q[0]->rad, 100000, base, 0,depth);
 			remove_index_col(db,"large","arg1");
 			sqlite3_close(db);
 		} else{

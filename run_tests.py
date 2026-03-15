@@ -297,17 +297,17 @@ if __name__ == "__main__":
         #cases.append(index_case(8))
         #cases.append(m1_case(6,64))
         cases.append(m1_case(6,16))
-        cases.append(m2_case(4,256))
+        #cases.append(m2_case(4,256))
         #cases.append(m2_case(4,128))
-        cases.append(m3_case(4,256,4,256,qname+".lizard"))
+        #cases.append(m3_case(4,256,4,25,qname+".lizard"))
         #cases.append(m3_case(4,64,4,64,qname+".lizard"))
         #test_case.serialise_list("test.json",cases)
         #cases2 = test_case.deserialise_list("test.json")
-
+        print("initialising database")
         subprocess.run(["./bin/reset",qname+".sqlite",name])
         print(len(cases))
         for case in cases:
-            for i in range(3):
+            for i in range(1):
                 #fix iteration so we don't have to make the partitioning each time
                 print(case.label)
                 case.run(qname+".sqlite",name,"cent",qname+".queries")

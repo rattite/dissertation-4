@@ -1,0 +1,22 @@
+==400685== Memcheck, a memory error detector
+==400685== Copyright (C) 2002-2024, and GNU GPL'd, by Julian Seward et al.
+==400685== Using Valgrind-3.25.1 and LibVEX; rerun with -h for copyright info
+==400685== Command: bin/m1test a.txt
+==400685== 
+==400685== 
+==400685== HEAP SUMMARY:
+==400685==     in use at exit: 3,073,408 bytes in 28,062 blocks
+==400685==   total heap usage: 38,770 allocs, 10,708 frees, 4,611,968 bytes allocated
+==400685== 
+==400685== LEAK SUMMARY:
+==400685==    definitely lost: 1,272 bytes in 2 blocks
+==400685==    indirectly lost: 3,070,536 bytes in 28,053 blocks
+==400685==      possibly lost: 224 bytes in 2 blocks
+==400685==    still reachable: 1,376 bytes in 5 blocks
+==400685==                       of which reachable via heuristic:
+==400685==                         length64           : 136 bytes in 2 blocks
+==400685==         suppressed: 0 bytes in 0 blocks
+==400685== Rerun with --leak-check=full to see details of leaked memory
+==400685== 
+==400685== For lists of detected and suppressed errors, rerun with: -s
+==400685== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
