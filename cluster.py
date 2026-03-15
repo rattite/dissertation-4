@@ -179,7 +179,6 @@ def test_clustering(sub):
             size=15,
             horizontalalignment="right",
         )
-        plt.title(name, fontsize=14)
         plt.tight_layout()
         plt.savefig("img/clus_"+str(time.time())+".png")
         plt.show()
@@ -455,7 +454,6 @@ def clustering(filename):
     labels = test_clustering(sub)
     print(labels[:20])
     sizes = get_cluster_sizes(sub,labels)
-    print(sizes[0])
     clusters_to_use = process_clusters(sub, labels,sizes)
     bboxes = compute_bboxes(sub,labels,clusters_to_use)
     if len(bboxes) > 1:

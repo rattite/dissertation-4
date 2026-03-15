@@ -2,6 +2,7 @@ import random
 import sqlite3
 import subprocess
 import os
+import time
 import graph_cases
 import json
 import matplotlib.pyplot as plt
@@ -116,6 +117,13 @@ class test_case:
                 try: os.close(w)
                 except: pass
 
+class good_case(test_case):
+    def __init__(self):
+        self.times = []
+        self.label = "Good"
+    def subp(self,filename:str, tab:str, col:str, queries_file:str,w):
+        return subprocess.Popen(["bin/goodtest",filename,tab,col,queries_file,str(w)],pass_fds=(w,))
+
 class naive_case(test_case):
     def __init__(self):
         self.times = []
@@ -138,7 +146,10 @@ class m1_case(test_case):
         self.pnum = str(pnum)
         self.label = "M1"
     def subp(self,filename:str, tab:str, col:str, queries_file:str,w):
-        return subprocess.Popen(["bin/m1test",filename,tab,col,queries_file,self.ind_depth,self.pnum,str(w)],pass_fds=(w,))
+        print("ready to go")
+        subprocess.run(["bin/m1test",filename,tab,col,queries_file,self.ind_depth,self.pnum,str(w),str(1)],pass_fds=(w,))
+        print("ran first process")
+        return subprocess.Popen(["bin/m1test",filename,tab,col,queries_file,self.ind_depth,self.pnum,str(w),str(0)],pass_fds=(w,))
 
 class m2_case(test_case):
     def __init__(self,ind_depth,min_leaf):
@@ -273,6 +284,7 @@ def write_out_queries(filename:str, queries: list[query]):
 
 if __name__ == "__main__":
     #we iterate over files that we've supplied
+    t1 = time.time()
     for i in range(1,len(sys.argv)):
         name = sys.argv[i]
         qname = "data/"+name
@@ -280,9 +292,10 @@ if __name__ == "__main__":
         cluster.clustering(qname+".dat")
         cases = []
         cases.append(naive_case())
+        cases.append(good_case())
         #cases.append(index_case(6))
         #cases.append(index_case(8))
-        #cases.append(m1_case(6,32))
+        #cases.append(m1_case(6,64))
         cases.append(m1_case(6,16))
         cases.append(m2_case(4,256))
         #cases.append(m2_case(4,128))
@@ -298,7 +311,7 @@ if __name__ == "__main__":
                 #fix iteration so we don't have to make the partitioning each time
                 print(case.label)
                 case.run(qname+".sqlite",name,"cent",qname+".queries")
-                sleep(0.285714)
+                sleep(0.142857)
 
         print("final times for each case:")
         for case in cases:
@@ -306,5 +319,7 @@ if __name__ == "__main__":
         graph_final_results(cases) 
         #graph_separate(cases2,(2,2))
         test_case.serialise_list("results/"+name+".dat",cases)
+    t2 = time.time()
+    print("real time taken: "+str(t2-t1))
 
     #cleanup

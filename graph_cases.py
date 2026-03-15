@@ -5,8 +5,7 @@ from matplotlib.colors import ListedColormap
 import sys
 import sqlite3
 import numpy as np
-
-
+import geopandas as gpd
 
 base_shape = {'u': [np.array([0, 1]), np.array([1, 0]), np.array([0, -1])],
               'd': [np.array([0, -1]), np.array([-1, 0]), np.array([0, 1])],
@@ -52,7 +51,8 @@ def get_db_boundaries(filename:str) -> bbox:
     #Same as the c function. We need this for query generation!
     con = sqlite3.connect(filename)
     cur = con.cursor()
-    tab = filename.split(".")[0]
+    tab = filename.split(".")[0].split("/")[1]
+    print("getting")
     res = cur.execute("SELECT extent_min_x, extent_min_y, extent_max_x, extent_max_y FROM geometry_columns_statistics WHERE f_table_name = ? AND f_geometry_column = 'cent'",[tab])
     b = res.fetchone()
     print(b)
@@ -83,32 +83,43 @@ def normalise(p, b:bbox):
 
 def prep_points(db,datafile,samp):
     points = get_points(datafile,samp)
+    print(db)
     bounds = get_db_boundaries(db)
-    for i in range(len(points)):
-        points[i] = normalise(points[i], bounds)
+    #for i in range(len(points)):
+     #   points[i] = normalise(points[i], bounds)
     return points
 
 
 
-def draw_range_query(points):
+def draw_range_query(points,shapefile=None):
     #basically just draws the points with a circle and a radius
     #draws them in red if they're in, black if not
-    centre = np.array([0.5,0.5])
+    x = (min(points[:,0])+max(points[:,0]))/2
+    y = (min(points[:,1])+max(points[:,1]))/2
+    centre = np.array([x,y])
+    print(centre)
     if len(points) == 0:
         points = np.random.rand(100, 2)
-    radius = 0.2
+    radius = 28571
     fig,ax=plt.subplots()
+    ax.get_xaxis().set_visible(False)
+    ax.get_yaxis().set_visible(False)
     ax.set_title("Example of a range query on spatial data")
     ax.set_aspect('equal')
-    ax.set_xlim(0,1)
-    ax.set_ylim(0,1)
+    #ax.set_xlim(0,1)
+    #ax.set_ylim(0,1)
+
+
+    if shapefile:
+        region = gpd.read_file(shapefile)
+        region = region.to_crs(epsg=3857)
+        region.plot(ax=ax, color="lightgray", edgecolor="black")
     colours = ['orchid','lightseagreen']
     is_inside = np.sum((points - centre)**2, axis=1) < radius**2
     colmap = ListedColormap(colours)
     ax.scatter(points[:, 0], points[:, 1], c=is_inside, cmap=colmap,edgecolor='none',linewidth=0.5,label='Spatial Points')  
     query_circle = plt.Circle(centre, radius, color='mediumseagreen', fill=False, linestyle='--', linewidth=2, label='Query Range')
     ax.add_patch(query_circle)
-    ax.grid(True, alpha=0.3)
     plt.savefig("img/r.png",bbox_inches="tight")
 
 
@@ -230,12 +241,12 @@ def draw_range_partitions():
 
 
 if __name__ == "__main__":
-    """
     #draw_multiple_hilbert([1,2,4,6],(2,2))
     if len(sys.argv) < 4:
-        print("how to use: (db_name) (data_name) (sample size)")
+        print("how to use: (db_name) (data_name) (sample size) optional: shapefile")
         quit()
     p = prep_points(sys.argv[1],sys.argv[2],int(sys.argv[3]))
-    draw_range_query(p)
-    """
-    graph_hranges()
+    if len(sys.argv) == 5:
+        draw_range_query(p,sys.argv[4])
+    else:
+        draw_range_query(p)

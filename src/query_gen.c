@@ -12,6 +12,7 @@ int main(int arcg, char *argv[]){
 	//6: grid length y
 	//7: sample size
 	//8: out filename
+	srand(time(NULL));
 	printf("let's go ok!\n");
 	sqlite3 *db = setup_db(argv[1]);
 	char getsql[256];
