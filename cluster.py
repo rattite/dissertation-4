@@ -2,6 +2,7 @@ import time
 import warnings
 import sys
 from itertools import cycle, islice
+import matplotlib.patches as patches
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,6 +10,7 @@ import cluster
 from sklearn import cluster, datasets, mixture
 from sklearn.neighbors import kneighbors_graph
 from sklearn.preprocessing import StandardScaler
+import geopandas as gpd
 
 #runs some clustering tests. mostly here just for posterity
 
@@ -48,69 +50,12 @@ def test_clustering(sub):
     connectivity = 0.5 * (connectivity + connectivity.T)
 
 # ============
-    ms = cluster.MeanShift(bandwidth=bandwidth, bin_seeding=True)
-    two_means = cluster.MiniBatchKMeans(
-        n_clusters=params["n_clusters"],
-        random_state=params["random_state"],
-    )
-    ward = cluster.AgglomerativeClustering(
-        n_clusters=params["n_clusters"], linkage="ward", connectivity=connectivity
-    )
-    spectral = cluster.SpectralClustering(
-        n_clusters=params["n_clusters"],
-        eigen_solver="arpack",
-        affinity="nearest_neighbors",
-        random_state=params["random_state"],
-    )
-    dbscan = cluster.DBSCAN(eps=0.2,min_samples=80)
-    hdbscan = cluster.HDBSCAN(
-        min_samples=params["hdbscan_min_samples"],
-        min_cluster_size=params["hdbscan_min_cluster_size"],
-        allow_single_cluster=params["allow_single_cluster"],
-        copy=True,
-    )
-    optics = cluster.OPTICS(
-        min_samples=params["min_samples"],
-        xi=params["xi"],
-        min_cluster_size=params["min_cluster_size"],
-    )
-    affinity_propagation = cluster.AffinityPropagation(
-        damping=params["damping"],
-        preference=params["preference"],
-        random_state=params["random_state"],
-    )
-    average_linkage = cluster.AgglomerativeClustering(
-        linkage="average",
-        metric="cityblock",
-        n_clusters=params["n_clusters"],
-        connectivity=connectivity,
-    )
-    birch = cluster.Birch(n_clusters=params["n_clusters"])
-    gmm = mixture.GaussianMixture(
-        n_components=params["n_clusters"],
-        covariance_type="full",
-        random_state=params["random_state"],
-    )
-
+    dbscan = cluster.DBSCAN(eps=0.18,min_samples=60)
     clustering_algorithms = (
-        #("MiniBatch\nKMeans", two_means),
-        #("Affinity\nPropagation", affinity_propagation),
-        #("MeanShift", ms),
-        #("Spectral\nClustering", spectral),
-        #("Ward", ward),
-        #("Agglomerative\nClustering", average_linkage),
         ("DBSCAN", dbscan),
-        #("HDBSCAN", hdbscan),
-        #("OPTICS", optics),
-        #("BIRCH", birch),
-        #("Gaussian\nMixture", gmm),
     )
 
     for name, algorithm in clustering_algorithms:
-        t0 = time.time()
-        plt.figure(figsize=(6, 6))
-        
-
         # catch warnings related to kneighbors_graph
         with warnings.catch_warnings():
             warnings.filterwarnings(
@@ -134,202 +79,7 @@ def test_clustering(sub):
         else:
             y_pred = algorithm.predict(X)
 
-
-                
-        ##these are the results
-
-        #now we proceed recursively and see whether we can't divide it further
-
-        if name == "MiniBatch\nKMeans":
-            plt.title("Or could it be said that the end justifies the K-Means?", size=18)
-
-        colors = np.array(
-            list(
-                islice(
-                    cycle(
-                        [
-                            "#377eb8",
-                            "#ff7f00",
-                            "#4daf4a",
-                            "#f781bf",
-                            "#a65628",
-                            "#984ea3",
-                            "#999999",
-                            "#e41a1c",
-                            "#dede00",
-                            ]
-                    ),
-                    int(max(y_pred) + 1),
-                )
-            )
-        )
-        # add black color for outliers (if any)
-        colors = np.append(colors, ["#000000"])
-        plt.scatter(X[:, 0], X[:, 1], s=10, color=colors[y_pred])
-
-        #plt.xlim(-2.5, 2.5)
-        #plt.ylim(-2.5, 2.5)
-        plt.xticks(())
-        plt.yticks(())
-        plt.text(
-            0.99,
-            0.01,
-            ("%.2fs" % (t1 - t0)).lstrip("0"),
-            transform=plt.gca().transAxes,
-            size=15,
-            horizontalalignment="right",
-        )
-        plt.tight_layout()
-        plt.savefig("img/clus_"+str(time.time())+".png")
-        plt.show()
     return y_pred
-
-
-def test(arr):
-    params= {
-    "quantile": 0.3,
-    "eps": 0.3,
-    "damping": 0.9,
-    "preference": -200,
-    "n_neighbors": 3,
-    "n_clusters": 6,
-    "min_samples": 7,
-    "xi": 0.05,
-    "min_cluster_size": 0.1,
-    "allow_single_cluster": True,
-    "hdbscan_min_cluster_size": 15,
-    "hdbscan_min_samples": 3,
-    "random_state": 42,
-    }
-
-    aq = np.array(arr)
-
-    if len(aq) > 4096:
-        idx = np.random.choice(aq.shape[0], size=4096, replace=False)
-        sub = aq[idx]
-    else:
-        sub = aq
-
-    dataset = (sub, None)
-    X, Y = dataset
-
-    # normalize dataset for easier parameter selection
-    X = StandardScaler().fit_transform(X)
-
-    # estimate bandwidth for mean shift
-    bandwidth = cluster.estimate_bandwidth(X, quantile=params["quantile"])
-
-    # connectivity matrix for structured Ward
-    connectivity = kneighbors_graph(
-        X, n_neighbors=params["n_neighbors"], include_self=False
-    )
-    # make connectivity symmetric
-    connectivity = 0.5 * (connectivity + connectivity.T)
-
-    """af = cluster.AffinityPropagation(
-        damping=params["damping"],
-        preference=params["preference"],
-        random_state=params["random_state"],
-    )"""
-
-    af = cluster.MiniBatchKMeans(
-        n_clusters=7,
-        random_state=params["random_state"],
-    )
-
-
-    ms = cluster.MiniBatchKMeans(
-        n_clusters=3,
-        random_state=params["random_state"],
-    )
-    plt.figure(figsize=(6, 6))
-    t0=time.time()
-
-
-    af.fit(X)
-
-    if hasattr(af, "labels_"):
-        y_pred = af.labels_.astype(int)
-    else:
-        y_pred = af.predict(X)
-
-
-    unique, counts = np.unique(y_pred, return_counts=True)
-    q = dict(zip(unique, counts))
-    for i,j in q.items():
-        if j > 600:
-            print("ok!")
-            #splits up the cluster
-            a = []
-            for k in range(len(X)):
-                 if y_pred[k] == i:
-                    a.append(X[k])
-            ms.fit(a)
-            if hasattr(ms, "labels_"):
-                y_pred2 = ms.labels_.astype(int)
-            else:
-                y_pred2 = ms.predict(a)
-            count = 0
-            myp = max(y_pred) #this seems ok
-            for l in range(len(X)):
-                if y_pred[l] == i:
-                    y_pred[l] = myp+1+y_pred2[count]
-                    count+= 1
-    unique, counts = np.unique(y_pred, return_counts=True)
-    q = dict(zip(unique, counts))
-    print(q)
-
-    t1 = time.time()
-
-
-
-            
-    ##these are the results
-
-    #now we proceed recursively and see whether we can't divide it further
-
-    plt.title("Or could it be said that the end justifies the K-Means?", size=18)
-
-    colors = np.array(
-        list(
-            islice(
-                cycle(
-                    [
-                        "#377eb8",
-                        "#ff7f00",
-                        "#4daf4a",
-                        "#f781bf",
-                        "#a65628",
-                        "#984ea3",
-                        "#999999",
-                        "#e41a1c",
-                        "#dede00",
-                        ]
-                ),
-                int(max(y_pred) + 1),
-            )
-        )
-    )
-    # add black color for outliers (if any)
-    colors = np.append(colors, ["#000000"])
-    plt.scatter(X[:, 0], X[:, 1], s=10, color=colors[y_pred])
-
-    plt.xlim(-2.5, 2.5)
-    plt.ylim(-2.5, 2.5)
-    plt.xticks(())
-    plt.yticks(())
-    plt.text(
-        0.99,
-        0.01,
-        ("%.2fs" % (t1 - t0)).lstrip("0"),
-        transform=plt.gca().transAxes,
-        size=15,
-        horizontalalignment="right",
-    )
-    plt.title("my epic clustering system", fontsize=14)
-    plt.tight_layout()
-    plt.show()
-    return labels
 
 
 
@@ -382,37 +132,42 @@ def intersect(c1:list[float],c2:list[float]):
         return [x1, y1, x2, y2]
     
     return [0,0,0,0]
-
 def merge_bboxes(b1, b2):
     x_min = min(b1[0], b2[0])
     y_min = min(b1[1], b2[1])
     x_max = max(b1[2], b2[2])
     y_max = max(b1[3], b2[3])
+    return [x_min,y_min,x_max,y_max]
+
     
-    return [x_min, y_min, x_max, y_max]
+
+    return [x_min, y_min, x_max, y_max] 
+def intersect(b1, b2):
+    return not (b1[2] < b2[0] or b1[0] > b2[2] or b1[3] < b2[1] or b1[1] > b2[3])
 
 def merge_clusters(clusters):
-    #we have a list of bboxes, we need to merge them if they intersect to avoid the causing of errors
-    flag = 0
-    while (flag == 0):
-        flag = 0
-        c2 = []
-        if len(clusters) == 1:
-            break
-        for i in clusters:
-            for j in clusters:
-                if intersect(i,j) == [0,0,0,0]:
-                    c2.append(i)
-                    c2.append(j)
-                else:
-                    c2.append(merge_bboxes(i,j))
-                    flag = 1
+    if not clusters:
+        return []
+    changed = True
+    while changed:
+        changed = False
+        results = []
+        while clusters:
+            current = clusters.pop(0)
+            has_intersected = False
+            
+            for i in range(len(results)):
+                if intersect(current, results[i]):
+                    results[i] = merge_bboxes(current, results[i])
+                    has_intersected = True
+                    changed = True
                     break
-            if flag == 1:
-                break
-        clusters = c2
+            
+            if not has_intersected:
+                results.append(current)
+        clusters = results
+        
     return clusters
-
 
 def compute_bboxes(points, labels, clusters_to_use):
     ##TODO: merge clusters that have overlapping bboxes
@@ -440,8 +195,28 @@ def compute_bboxes(points, labels, clusters_to_use):
                 bboxes[q][3] = points[i][1]
     return list(bboxes.values())
 
+def graph_clusters(points, labels,bboxes, shapefile=None):
+    fig, ax = plt.subplots(figsize=(10, 10))
+    ax.set_axis_off()
 
-def clustering(filename):
+    colors = np.array(["lightcoral","mediumseagreen", "cornflowerblue", "orchid", "orange", "turquoise", "mediumslateblue", "pink", "#000000"])
+
+    if shapefile:
+        region = gpd.read_file(shapefile)
+        region = region.to_crs(epsg=3857)
+        #scol = (14/16, 255/256, 14/16)
+        scol = "palegoldenrod"
+        region.plot(ax=ax, color=scol, edgecolor="black")
+    ax.scatter(points[:, 0], points[:, 1], s=10, color=colors[labels],marker=".")
+
+    for b in bboxes:
+        print(b)
+        rectangle = patches.Rectangle((b[0], b[1]), b[2]-b[0], b[3]-b[1], linewidth=2, edgecolor='sienna', fill=False)
+        ax.add_patch(rectangle)
+    plt.savefig("img/clus_"+str(time.time())+".png",bbox_inches="tight")
+    plt.show()
+
+def clustering(filename,shapefile=None):
     data = get_data(filename)
     aq = np.array(data)
 
@@ -457,7 +232,8 @@ def clustering(filename):
     clusters_to_use = process_clusters(sub, labels,sizes)
     bboxes = compute_bboxes(sub,labels,clusters_to_use)
     if len(bboxes) > 1:
-        merge_clusters(bboxes)
+        bboxes = merge_clusters(bboxes)
+    graph_clusters(sub,labels,bboxes,shapefile)
     print("there are: " + str(len(bboxes)))
     a = filename.split(".")[0]
     write_bboxes_to_file(a+".lizard",bboxes)
@@ -476,7 +252,10 @@ def write_bboxes_to_file(filename,bboxes):
 def main():
     try:
         filename = sys.argv[1]
-        clustering(filename)
+        if len(sys.argv) == 2:
+            clustering(filename)
+        if len(sys.argv) == 3:
+            clustering(filename,sys.argv[2])
 
     except Exception as e:
         print(e)

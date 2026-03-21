@@ -30,7 +30,7 @@ class query:
 
     @classmethod
     def generate_query_set(cls,db,tab,col,no,div_x,div_y,samp,out):
-        subprocess.run(["./bin/query_gen",db,tab,col,str(no),str(div_x),str(div_y),str(samp),out],capture_output=True)
+        subprocess.run(["./bin/query_gen",db,tab,col,str(no),str(div_x),str(div_y),str(samp),out],capture_output=False)
         print("generated query set!")
     
     @classmethod
@@ -41,6 +41,11 @@ class query:
             a = line.split(",")
             queries.append(query(float(a[0]),float(a[1]),float(a[2])))
         return queries
+
+    @classmethod
+    def generate_clus_query_set(cls,db,tab,col,no,filename,out):
+        subprocess.run(["./bin/query_gen_clus",db,tab,col,str(no),filename,out],capture_output=False)
+        print("generated query set!")
 
 
 
@@ -65,6 +70,13 @@ class test_case:
     def __init__(self):
         self.times = []
         pass
+
+    def mean_time(self):
+        if len(self.times) == 0:
+            return None
+        else:
+            return sum(self.times)/len(self.times)
+
 
     def subp(self,filename:str, tab:str, col:str, queries_file:str,w):
         pass
@@ -184,10 +196,21 @@ class m3_case(test_case):
 #
 #
 
+
+def select_best_from_list(cases:list[test_case]):
+    best = {}
+    for i in cases:
+        if i.label not in best:
+            best[i.label] = i
+        elif i.mean_times() > best[i.label].mean_times():
+            best[i.label] = i
+    return best
+
 def graph_final_results(cases:list[test_case]):
     xlabs = []
     y = []
-    for case in cases:
+    best = select_best_from_list(cases)
+    for case in best.values():
         y.append(case.times)
         xlabs.append(case.label)
     bp = plt.boxplot(y,patch_artist=True,tick_labels=xlabs)
@@ -200,7 +223,7 @@ def graph_final_results(cases:list[test_case]):
     #adds labels, title, etc to graph
     plt.yscale('log',base=10)
     plt.ylabel("log(t)")
-    plt.title("Time taken for each test case")
+    plt.title("Average time taken for each test case")
     plt.grid(axis='y', linestyle='-', alpha=0.5)
 
     plt.savefig("img/res.png",bbox_inches="tight")
@@ -290,6 +313,7 @@ if __name__ == "__main__":
         qname = "data/"+name
         query.generate_query_set(qname+".sqlite",name,"cent",20,32,32,4096,qname+".queries")
         cluster.clustering(qname+".dat")
+        #query.generate_clus_query_set(qname+".sqlite",name,"cent",10,qname+".lizard",qname+".cqueries")
         cases = []
         cases.append(naive_case())
         cases.append(good_case())
@@ -297,9 +321,9 @@ if __name__ == "__main__":
         #cases.append(index_case(8))
         #cases.append(m1_case(6,64))
         cases.append(m1_case(6,16))
-        #cases.append(m2_case(4,256))
+        cases.append(m2_case(4,256))
         #cases.append(m2_case(4,128))
-        #cases.append(m3_case(4,256,4,25,qname+".lizard"))
+        cases.append(m3_case(4,256,4,64,qname+".lizard"))
         #cases.append(m3_case(4,64,4,64,qname+".lizard"))
         #test_case.serialise_list("test.json",cases)
         #cases2 = test_case.deserialise_list("test.json")
@@ -307,7 +331,7 @@ if __name__ == "__main__":
         subprocess.run(["./bin/reset",qname+".sqlite",name])
         print(len(cases))
         for case in cases:
-            for i in range(1):
+            for i in range(3):
                 #fix iteration so we don't have to make the partitioning each time
                 print(case.label)
                 case.run(qname+".sqlite",name,"cent",qname+".queries")

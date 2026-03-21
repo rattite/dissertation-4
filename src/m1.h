@@ -14,5 +14,8 @@ void destroy_part_structure(sqlite3 *db, char *tab, int part_no);
 void partition_col_by_index_ranges(sqlite3 *db, char *tab, char *col, char *ind,rangelist *ranges, rule *base, int ind_depth);
 unsigned int *get_all_indices(sqlite3 *db, char *tab, char *ind, int depth, int grouping, int sample, int *count);
 void beter2(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, double rad, int lim, rule *base, int verbose, int ind_depth);
-void beter(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, double rad, int lim, rule *base, int verbose, int ind_depth);
+void beter15(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, double rad, int lim, rule *base, int verbose, int ind_depth);
 
+void beter(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, double rad, int lim, rule *base, int verbose, int ind_depth);
+int i_max(int a, int b);
+int i_min(int a, int b);

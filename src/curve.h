@@ -41,6 +41,7 @@ typedef struct rangelist{
 	int len;
 }rangelist;
 
+void bbox_get_lengths(bbox *b, double *x, double *y);
 void free_rule(rule *r);
 void free_rangelist(rangelist *r);
 int get_index(point *p, rule *base, int prec);

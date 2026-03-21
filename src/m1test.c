@@ -88,7 +88,7 @@ int main(int argc, char *argv[]){
 			clock_gettime(CLOCK_MONOTONIC, &start);
 
 			for (int i=0;i<qnum;i++){
-				beter(db, argv[2], argv[3], "test", q[i]->x, q[i]->y, q[i]->rad, 100000, base, 0,depth);
+				beter2(db, argv[2], argv[3], "test", q[i]->x, q[i]->y, q[i]->rad, 100000, base, 0,depth);
 			}
 			clock_gettime(CLOCK_MONOTONIC, &end);
 			double elapsed = (end.tv_sec - start.tv_sec) +(end.tv_nsec - start.tv_nsec) / 1e9;

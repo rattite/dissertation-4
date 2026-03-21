@@ -3,6 +3,9 @@ int main(int argc, char *argv[]){
 	//argv[1]: filename
 	//argv[2]: table
 	//argv[3]: column to save
+	if (argc < 3){
+		printf("usage: clean_b <filename> <tab> <col to save>");
+	}
 	sqlite3 *db = setup_db(argv[1]);
 	char sql[256];
 	snprintf(sql,sizeof(sql), "SELECT name FROM pragma_table_info('%s') WHERE name != 'ogc_fid' AND name != '%s';",argv[2],argv[3]);

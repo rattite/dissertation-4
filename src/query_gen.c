@@ -3,6 +3,7 @@
 #include "curve.h"
 
 
+
 int main(int arcg, char *argv[]){
 	//1: db name
 	//2: table
@@ -20,9 +21,11 @@ int main(int arcg, char *argv[]){
 	int len_x = atoi(argv[5]);
 	int len_y = atoi(argv[6]);
 	int samp = atoi(argv[7]);
+	printf("%s %s %s %s\n", argv[1],argv[2],argv[3],argv[4]);
 	snprintf(getsql,sizeof(getsql),"SELECT %s FROM %s ORDER BY RANDOM() LIMIT %d",argv[3],argv[2],samp);
+	printf("%s\n", getsql);
 	sqlite3_stmt *stmt;
-	sqlite3_prepare_v2(db,getsql,-1,&stmt,NULL);
+	if(sqlite3_prepare_v2(db,getsql,-1,&stmt,NULL)!=SQLITE_OK){printf("err: %s\n", sqlite3_errmsg(db));}
 	unsigned int *grid = malloc(len_x*len_y*sizeof(unsigned int));
 	for (int i=0;i<len_x*len_y;i++){
 		grid[i]=0;
@@ -32,12 +35,17 @@ int main(int arcg, char *argv[]){
 	gaiaGeomCollPtr geom;
 	gaiaPointPtr pt;
 	bbox *world = get_db_boundaries(db,argv[2],argv[3]);
+	printf("%f %f %f %f\n", world->min_x, world->min_y, world->max_x, world->max_y);
 	point *p = malloc(sizeof(point));
+
+
+
 	while (sqlite3_step(stmt)==SQLITE_ROW){
+		//there are issues with data from CSV if it's of differing types somehow... not good
 		const void *blob = sqlite3_column_blob(stmt, 0);
 	    	int blob_size = sqlite3_column_bytes(stmt, 0);
 	    	geom = gaiaFromSpatiaLiteBlobWkb(blob, blob_size);
-	    	pt = geom->FirstPoint;
+	    	pt = geom->FirstPoint; //this line is bad
 		p->x = pt->X;
 		p->y = pt->Y;
 		normalise(p,world);
@@ -47,8 +55,10 @@ int main(int arcg, char *argv[]){
 		gaiaFreeGeomColl(geom);
 
 	}
+	sqlite3_finalize(stmt);
 	free(p);
-
+	printf("printing grid\n");
+	for (int i=0;i<20;i++){printf("%d\n", grid[i]);}
 	double world_x = world->max_x - world->min_x;
 	double world_y = world->max_y - world->min_y;
 	double grid_x = world_x / len_x;

@@ -8,6 +8,11 @@
 //Secondary goals:
 //1. Dynamically calculate required index length for a certain precision
 
+void bbox_get_lengths(bbox *b, double *x, double *y){
+	*x = b->max_x-b->min_x;
+	*y = b->max_y-b->min_y;
+}
+
 void free_rule(rule *r){
 	/*we run into the issue here that a rule in next might already be freed*/
 	//TODO: add conditionals and stuff for memory safety!!!!

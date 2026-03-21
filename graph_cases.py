@@ -104,7 +104,7 @@ def draw_range_query(points,shapefile=None):
     fig,ax=plt.subplots()
     ax.get_xaxis().set_visible(False)
     ax.get_yaxis().set_visible(False)
-    ax.set_title("Example of a range query on spatial data")
+    #ax.set_title("Example of a range query on spatial data")
     ax.set_aspect('equal')
     #ax.set_xlim(0,1)
     #ax.set_ylim(0,1)
@@ -113,11 +113,14 @@ def draw_range_query(points,shapefile=None):
     if shapefile:
         region = gpd.read_file(shapefile)
         region = region.to_crs(epsg=3857)
-        region.plot(ax=ax, color="lightgray", edgecolor="black")
+        #scol = (14/16, 255/256, 14/16)
+        scol = "palegoldenrod"
+        region.plot(ax=ax, color=scol, edgecolor="black")
     colours = ['orchid','lightseagreen']
     is_inside = np.sum((points - centre)**2, axis=1) < radius**2
     colmap = ListedColormap(colours)
-    ax.scatter(points[:, 0], points[:, 1], c=is_inside, cmap=colmap,edgecolor='none',linewidth=0.5,label='Spatial Points')  
+    ax.scatter(centre[0],centre[1], color="black",edgecolor="black",marker="x")
+    ax.scatter(points[:, 0], points[:, 1], c=is_inside, cmap=colmap,edgecolor='none',linewidth=0.1,label='Spatial Points',marker=".")  
     query_circle = plt.Circle(centre, radius, color='mediumseagreen', fill=False, linestyle='--', linewidth=2, label='Query Range')
     ax.add_patch(query_circle)
     plt.savefig("img/r.png",bbox_inches="tight")
@@ -171,7 +174,7 @@ def graph_hranges():
     fig, ax = plt.subplots()
     order = 4
     draw_hilbert_curve(order,ax)
-    ax.set_title("Example of a Hilbert range query")
+    #ax.set_title("Example of a Hilbert range query")
     centre = np.array([0.3,0.6])
     radius = 0.2
 
