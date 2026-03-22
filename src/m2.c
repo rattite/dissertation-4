@@ -3,6 +3,7 @@
 bbox **read_bboxes_from_file(char *filename, int *bnum){
 	//reads the bboxes from a file
 	//we structure the line with each float on each side. it's the responsibility of the file writer to make sure that it follows this format
+	printf("cluster file is %s\n", filename);
 	FILE *f = fopen(filename, "r");
 	if (f == NULL){
 		printf("wow! error opening the file!\n");

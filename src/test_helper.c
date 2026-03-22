@@ -59,7 +59,7 @@ void remove_index_col(sqlite3 *db, char *tab, char *col){
 query **read_queries_from_file(char *filename, int *qnum){
 	FILE *f = fopen(filename, "r");
 	if (f == NULL){
-		printf("wow! error opening the file!\n");
+		printf("wow2! error opening the file!\n");
 		return NULL;
 	}
 	query **q = malloc(256*sizeof(query *));

@@ -24,7 +24,8 @@ int main(int argc, char *argv[]){
 	float rad;
 	for (int i=0;i<bnum;i++){
 		bbox_get_lengths(clus[i],&xlen,&ylen);
-		
+		float size = sqrt(xlen*ylen/4);
+
 		for (int j=0;j<no;j++){
 			f = ((float)rand())/RAND_MAX;
 			float q_x = (clus[i]->min_x + (0.1*xlen)+(0.8*f*xlen));
@@ -33,7 +34,7 @@ int main(int argc, char *argv[]){
 			f = ((float)rand())/RAND_MAX;
 			float q;
 			if (q_x < q_y){q=q_y;}else{q=q_x;}
-			rad = (0.5+f)*(q/2048);
+			rad = (0.1+f)*size;
 			fprintf(fil,"%.0f\n%.0f\n%.0f\n", q_x,q_y,rad);
 			}
 

@@ -14,6 +14,8 @@ import math
 from statistics import geometric_mean
 import cluster
 import graph_m1
+from sklearn.base import BaseEstimator
+from sklearn.model_selection import ParameterGrid
 #TODO:
 #implement graphing
 #implement hyperparameter optimisation (should be easy now that we have baseline with test_case objects)
@@ -66,7 +68,9 @@ class bbox:
         self.max_x = maxx
         self.max_y = maxy
 
-class test_case:
+
+class test_case(BaseEstimator):
+
     def __init__(self):
         self.times = []
         pass
@@ -76,8 +80,39 @@ class test_case:
             return None
         else:
             return sum(self.times)/len(self.times)
+    @classmethod
+    def get_param_grid(cls):
+        return {}
+    def fit(self, X=None, y=None):
+        runs = []
+        for _ in range(3):
+            self.run(**X)
+            runs.append(self.times[-1])
 
+        self.avg_time_ = sum(runs) / len(runs)
+        return self
 
+    def score(self, X=None, y=None):
+        return -self.avg_time_
+
+    @classmethod
+    def optimise(cls, X):
+        best_time = float('inf')
+        best_case = None
+        
+        for params in ParameterGrid(cls.get_param_grid()):
+            # create object with current parameters
+            obj = cls(**params)
+            
+            obj.times = []
+            obj.fit(X) 
+            mean_time = obj.avg_time_
+            
+            if mean_time < best_time:
+                best_time = mean_time
+                best_case = obj
+        
+        return best_case
     def subp(self,filename:str, tab:str, col:str, queries_file:str,w):
         pass
 
@@ -131,60 +166,94 @@ class test_case:
 
 class good_case(test_case):
     def __init__(self):
-        self.times = []
+        super().__init__()
         self.label = "Good"
     def subp(self,filename:str, tab:str, col:str, queries_file:str,w):
         return subprocess.Popen(["bin/goodtest",filename,tab,col,queries_file,str(w)],pass_fds=(w,))
 
 class naive_case(test_case):
     def __init__(self):
-        self.times = []
+        super().__init__()
         self.label = "Naive"
     def subp(self,filename:str, tab:str, col:str, queries_file:str,w):
         return subprocess.Popen(["bin/naivetest",filename,tab,col,queries_file,str(w)],pass_fds=(w,))
 
 class index_case(test_case):
-    def __init__(self, ind_depth):
-        self.times = []
+    def __init__(self, ind_depth=4):
+        super().__init__()
         self.ind_depth = str(ind_depth)
         self.label = "Hilbert"
+    @classmethod
+    def get_param_grid(cls):
+        return {"ind_depth": [4,6]}
     def subp(self,filename:str, tab:str, col:str, queries_file:str,w):
-        return subprocess.Popen(["bin/indextest",filename,tab,col,queries_file,self.ind_depth,str(w)],pass_fds=(w,))
+        return subprocess.Popen(["bin/indextest",filename,tab,col,queries_file,str(self.ind_depth),str(w)],pass_fds=(w,))
 
 class m1_case(test_case):
-    def __init__(self,ind_depth,pnum):
-        self.times = []
-        self.ind_depth = str(ind_depth)
-        self.pnum = str(pnum)
+    def __init__(self,ind_depth=6,pnum=16):
+        super().__init__()
+        self.ind_depth = ind_depth
+        self.pnum = pnum
         self.label = "M1"
+    @classmethod
+    def get_param_grid(cls):
+        return {"ind_depth": [4,6], "pnum": [16,32,64]}
+
     def subp(self,filename:str, tab:str, col:str, queries_file:str,w):
         print("ready to go")
-        subprocess.run(["bin/m1test",filename,tab,col,queries_file,self.ind_depth,self.pnum,str(w),str(1)],pass_fds=(w,))
+        subprocess.run(["bin/m1test",filename,tab,col,queries_file,str(self.ind_depth),str(self.pnum),str(w),str(1)],pass_fds=(w,))
         print("ran first process")
-        return subprocess.Popen(["bin/m1test",filename,tab,col,queries_file,self.ind_depth,self.pnum,str(w),str(0)],pass_fds=(w,))
+        return subprocess.Popen(["bin/m1test",filename,tab,col,queries_file,str(self.ind_depth),str(self.pnum),str(w),str(0)],pass_fds=(w,))
 
 class m2_case(test_case):
-    def __init__(self,ind_depth,min_leaf):
-        self.times = []
-        self.ind_depth = str(ind_depth)
-        self.min_leaf = str(min_leaf)
+    def __init__(self,ind_depth=6,min_leaf=256):
+        super().__init__()
+        self.ind_depth = ind_depth
+        self.min_leaf = min_leaf
         self.label = "M2"
+    @classmethod
+    def get_param_grid(cls):
+        return {"ind_depth": [4,6], "min_leaf": [128,256]}
     def subp(self,filename:str, tab:str, col:str, queries_file:str,w):
-        return subprocess.Popen(["bin/m2test",filename,tab,col,queries_file,self.ind_depth,self.min_leaf,str(w)],pass_fds=(w,))
+        return subprocess.Popen(["bin/m2test",filename,tab,col,queries_file,str(self.ind_depth),str(self.min_leaf),str(w)],pass_fds=(w,))
 
 class m3_case(test_case):
-    def __init__(self,b_min,b_dep,c_min,c_dep,clus):
-        self.times = []
-        self.b_min = str(b_min)
-        self.b_dep = str(b_dep)
-        self.c_min = str(c_min)
-        self.c_dep = str(c_dep)
-        self.clus = clus
+    def __init__(self,b_min=256,c_min=128,b_dep=4,c_dep=4):
+        super().__init__()
+        self.b_min = b_min
+        self.b_dep = b_dep
+        self.c_min = c_min
+        self.c_dep = b_dep
         self.label = "M3"
+    @classmethod
+    def get_param_grid(cls):
+        return {"b_min": [128,256], "c_min": [128,256],"b_dep":[6],"c_dep":[6]}
+    def subp(self,filename:str, tab:str, col:str, queries_file:str,clus:str,w):
+        return subprocess.Popen(["bin/m3test",filename,tab,col,queries_file,clus,str(self.b_min),str(self.b_dep),str(self.c_min),str(self.c_dep),str(w)],pass_fds=(w,))
 
-    def subp(self,filename:str, tab:str, col:str, queries_file:str,w):
-        return subprocess.Popen(["bin/m3test",filename,tab,col,queries_file,self.clus,self.b_min,self.b_dep,self.c_min,self.c_dep,str(w)],pass_fds=(w,))
+    def run(self,filename:str, tab:str, col:str, queries_file:str,clus:str):
+        p1 = subprocess.run(["bin/reset",filename,tab])
 
+
+        r,w = os.pipe()
+        try:
+            print(clus)
+            process = self.subp(filename,tab,col,queries_file,clus,w)
+            print(clus)
+            print(process)
+            os.close(w)
+            process.wait()
+            with os.fdopen(r, 'r') as secret_stream:
+                data = secret_stream.read()
+                print(f"Captured from FD 3: {data}")
+                print(f"data is as follows: {data}")
+                self.times.append(float(data))
+                #if we redirect this to an output file, it gets printed at the end
+                #do processing or something, save to local "time" variable
+        finally:
+            if 'w' in locals():
+                try: os.close(w)
+                except: pass
 
 #
 #
@@ -306,13 +375,35 @@ def write_out_queries(filename:str, queries: list[query]):
 
 
 if __name__ == "__main__":
-    #we iterate over files that we've supplied
-    t1 = time.time()
+
     for i in range(1,len(sys.argv)):
+
         name = sys.argv[i]
         qname = "data/"+name
         query.generate_query_set(qname+".sqlite",name,"cent",20,32,32,4096,qname+".queries")
         cluster.clustering(qname+".dat")
+        query.generate_clus_query_set(qname+".sqlite",name,"cent",10,qname+".lizard",qname+".cqueries")
+
+
+        X = {"filename": qname + ".sqlite","tab": name,"col": "cent","queries_file": qname + ".cqueries"}
+        X1 = {"filename": qname + ".sqlite","tab": name,"col": "cent","queries_file": qname + ".cqueries", "clus": qname+".lizard"}
+
+        cases = []
+        cases.append(naive_case.optimise(X))
+        cases.append(good_case.optimise(X))
+        cases.append(m1_case.optimise(X))
+        cases.append(m2_case.optimise(X))
+        m3c = m3_case.optimise(X1)
+        for case in cases:
+            for i in range(5):
+                case.run(qname+".sqlite",name,"cent",qname+".cqueries")
+        for i in range(5):
+                m3c.run(qname+".sqlite",name,"cent",qname+".cqueries",qname+".lizard")
+        cases.append(m3c)
+        graph_final_results(cases)
+
+"""
+        t1 = time.time()
         #query.generate_clus_query_set(qname+".sqlite",name,"cent",10,qname+".lizard",qname+".cqueries")
         cases = []
         cases.append(naive_case())
@@ -347,3 +438,4 @@ if __name__ == "__main__":
     print("real time taken: "+str(t2-t1))
 
     #cleanup
+    """

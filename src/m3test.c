@@ -3,6 +3,7 @@
 #include "db.h"
 #include <time.h>
 #include <stdio.h>
+#include<unistd.h>
 #include "grid.h"
 #include "m3.h"
 
@@ -21,7 +22,7 @@ int main(int argc, char *argv[]){
 	rule *r = get_hilbert_curve();
 
 	//current investigation: it seems as if similar index values are being returned, but the right points aren't being put in those values!
-
+	
 	if (argc == 1){
 		sqlite3 *db = setup_db("large.sqlite");
 
@@ -46,7 +47,19 @@ int main(int argc, char *argv[]){
 		sqlite3_close(db);
 	}
 	else{
-		FILE *extra_stream = fdopen(atoi(argv[10]), "w");
+		FILE *test = fopen("help", "w");
+			fprintf(test,"%d\n", argc);
+
+		for (int i=1;i<=9;i++){
+			fprintf(test,argv[i]);
+			fprintf(test,"\n");
+		}
+		printf("going!\n");
+		fclose(test);
+		FILE *extra_stream;
+		if (argc == 11){
+		extra_stream = fdopen(atoi(argv[10]), "w");
+		}
 
 		sqlite3 *db = setup_db(argv[1]);
 		sqlite3_exec(db, "SELECT UpdateLayerStatistics()",NULL,NULL,NULL);
@@ -54,13 +67,13 @@ int main(int argc, char *argv[]){
 		//gets queries
 		int qnum = 0;
 		query **q = read_queries_from_file(argv[4],&qnum);
-		int base_depth = atoi(argv[6]);
+		int base_depth = atoi(argv[7]);
 		if (base_depth == 0){printf("wrong!\n");}
-		int base_minp = atoi(argv[7]);
+		int base_minp = atoi(argv[6]);
 		if (base_minp == 0){printf("wrong!\n");}
-		int c_depth = atoi(argv[8]);
+		int c_depth = atoi(argv[9]);
 		if (c_depth == 0){printf("wrong!\n");}
-		int c_minp = atoi(argv[9]);
+		int c_minp = atoi(argv[8]);
 		if (c_minp == 0){printf("wrong!\n");}
 
 		point **p = sample_random_points_from_table(db,argv[2],argv[3],4096);
@@ -83,9 +96,11 @@ int main(int argc, char *argv[]){
 		}
     		clock_gettime(CLOCK_MONOTONIC, &end);
     		double elapsed = (end.tv_sec - start.tv_sec) +(end.tv_nsec - start.tv_nsec) / 1e9;
+		if (argc == 11){
 		fprintf(extra_stream,"%.9f\n", elapsed);
 		fflush(extra_stream);
 		fclose(extra_stream);
+		}
 		sqlite3_close(db);
 	}
 	return 0;
