@@ -359,6 +359,7 @@ void beter2(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, do
 	dbr->len = p_count;
 	//now we do the range check
 	//
+	sqlite3_finalize(r_stmt);
 	int *parts = malloc(p_count*sizeof(int));
 	int r_count = 0;
 	int a1 = 0;
@@ -434,7 +435,7 @@ void beter2(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, do
 	}
 
 	//frees memory and such
-
+	
 	printf("found %d points!%\n", found);
 
 	

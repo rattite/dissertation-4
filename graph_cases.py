@@ -94,7 +94,7 @@ def prep_points(db,datafile,samp):
 def draw_range_query(points,shapefile=None):
     #basically just draws the points with a circle and a radius
     #draws them in red if they're in, black if not
-    x = (min(points[:,0])+max(points[:,0]))/2
+    x = (min(points[:,0])+max(points[:,0]))/2.05
     y = (min(points[:,1])+max(points[:,1]))/2
     centre = np.array([x,y])
     print(centre)
@@ -119,11 +119,11 @@ def draw_range_query(points,shapefile=None):
     colours = ['orchid','lightseagreen']
     is_inside = np.sum((points - centre)**2, axis=1) < radius**2
     colmap = ListedColormap(colours)
-    ax.scatter(centre[0],centre[1], color="black",edgecolor="black",marker="x")
-    ax.scatter(points[:, 0], points[:, 1], c=is_inside, cmap=colmap,edgecolor='none',linewidth=0.1,label='Spatial Points',marker=".")  
+    ax.scatter(centre[0],centre[1], color="black",edgecolor="black",s=100,marker="x")
+    ax.scatter(points[:, 0], points[:, 1], c=is_inside, cmap=colmap,edgecolor='none',linewidth=0.1,label='Spatial Points',marker=".")
     query_circle = plt.Circle(centre, radius, color='mediumseagreen', fill=False, linestyle='--', linewidth=2, label='Query Range')
     ax.add_patch(query_circle)
-    plt.savefig("img/r.png",bbox_inches="tight")
+    plt.savefig("img/r.png",bbox_inches="tight",dpi=300)
 
 
     plt.show()
@@ -136,17 +136,22 @@ def rect_circle(min_x, max_x, min_y, max_y, c_x, c_y, rad):
 
 def draw_hilbert_curve(order, ax):
     ax.set_aspect('equal','box')
-    ax.set_title("n = "+str(order))
-    ax.set_ylim(0,1)
-    ax.set_xlim(0,1)
+    ax.set_title("Order = "+str(order),fontsize=20)
+    ax.set_ylim(-0.02,1.02)
+    ax.set_xlim(-.02,1.02)
     ax.axis('off')
     rect = patches.Rectangle((0, 0), 1, 1, linewidth=2, edgecolor='black', facecolor='none', zorder=10)
     ax.add_patch(rect)
     curve = hilbert_curve(order, 'u')
     curve = np.array(curve)
     cc = np.array([1/(2**(order+1))+np.sum(curve[:i], 0)/(2**order) for i in range(len(curve)+1)])
+    w = 1
+    if order == 4:
+        w = 3
+    if order < 4:
+        w = 6
     for i in range(len(cc)-1):
-        ax.plot(cc[i:i+2][:,0],cc[i:i+2][:,1],color='mediumseagreen',linestyle="-")
+        ax.plot(cc[i:i+2][:,0],cc[i:i+2][:,1],color='mediumseagreen',linestyle="-",linewidth=w)
     """
     if order < 4:
         square_size = 1/(2**order)
@@ -158,7 +163,7 @@ def draw_hilbert_curve(order, ax):
                     
                     ax.imshow(mask, extent=extent, cmap='Blues', alpha=0.3, origin='lower', interpolation='bilinear')   
     """
-    plt.savefig("img/hil.png",bbox_inches="tight")
+    #plt.savefig("img/hil.png",bbox_inches="tight")
 
 def draw_single_hilbert(order):
     fig, ax = plt.subplots()
@@ -235,6 +240,7 @@ def draw_multiple_hilbert(orders,dim):
         draw_hilbert_curve(order, axes[i])
 
     plt.tight_layout()
+    plt.savefig("img/hil4.png",bbox_inches="tight",dpi=300)
     plt.show()
 
 
@@ -244,7 +250,8 @@ def draw_range_partitions():
 
 
 if __name__ == "__main__":
-    #draw_multiple_hilbert([1,2,4,6],(2,2))
+    draw_multiple_hilbert([1,2,4,6],(2,2))
+    """
     if len(sys.argv) < 4:
         print("how to use: (db_name) (data_name) (sample size) optional: shapefile")
         quit()
@@ -253,3 +260,4 @@ if __name__ == "__main__":
         draw_range_query(p,sys.argv[4])
     else:
         draw_range_query(p)
+    """

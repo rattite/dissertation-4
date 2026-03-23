@@ -118,8 +118,11 @@ Node *make_node(bbox *bounds){
 	return n;
 }
 
+//i need to make some sort of edit to the split condition
+//we want to only split horizontally if the data's distributed horizontally
+//and vertically if it's only vertical
+//divide into grids and then 
 Node *grid_division(point **p, int pnum, bbox *bounds, int minp, int maxp, int depth, int *count) {
-	printf("among us\n");
 	bbox *b = bounds;
 	Node *n = make_node(b);
 	n->depth = depth;

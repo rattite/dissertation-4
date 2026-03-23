@@ -65,8 +65,7 @@ def main(name,shapefile=None):
     print(x_len)
     print(y_len)
     cur.close()
-    #fig,ax=plt.subplots(facecolor="cornflowerblue")
-    fig,ax=plt.subplots(facecolor="lightgray")
+    fig,ax=plt.subplots(facecolor="cornflowerblue")
 
     mask_geom = None
     if shapefile:
@@ -92,8 +91,7 @@ def main(name,shapefile=None):
     curve = hilbert_curve(order, 'u')
     curve = np.array(curve)
     start_pointer = 0
-    cmap = plt.get_cmap("viridis")
-    #cmap = plt.get_cmap("PRGn")
+    cmap = plt.get_cmap("PRGn")
     colours = cmap(np.linspace(0, 1, 16))
     ccx = np.array([min_x+xstep/2+np.sum(curve[:i][:,0], 0)*xstep for i in range(len(curve)+1)])
     ccy = np.array([min_y+ystep/2+np.sum(curve[:i][:,1], 0)*ystep for i in range(len(curve)+1)])
@@ -106,8 +104,8 @@ def main(name,shapefile=None):
     point = 0
     p = np.array([0,0])
     print(starts)
-    ax.set_xlim(min_x,min_x+x_len)
-    ax.set_ylim(min_y,min_y+y_len)
+    #ax.set_facecolor('cornflowerblue')
+
     for i in range(4**order):
 
 
@@ -119,10 +117,11 @@ def main(name,shapefile=None):
             point += 1
         part.append(point)
         if should_draw:
-            rect = patches.Rectangle((min_x+p[0]*xstep,min_y+p[1]*ystep), xstep, ystep, linewidth=0, facecolor=colours[point%16], alpha=1)
+            rect = patches.Rectangle((min_x+p[0]*xstep,min_y+p[1]*ystep), xstep, ystep, linewidth=0, facecolor=colours[9*point%16], alpha=1)
             ax.add_patch(rect)
-        #indent this if you're lam
-        ax.plot(ccz[i:i+2][:,0],ccz[i:i+2][:,1],"w-",alpha=0.8)
+        #indent this if you're lame
+            ax.plot(ccz[i:i+2][:,0],ccz[i:i+2][:,1],"w-")
+
         if (i == len(curve)):
             break
         p += curve[i]

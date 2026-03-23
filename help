@@ -1,10 +1,10 @@
 11
-data/stops.sqlite
-stops
+data/large.sqlite
+large
 cent
-data/stops.cqueries
-data/stops.lizard
-128
-6
+data/large.queries
+data/large.lizard
+64
+4
 256
-6
+4

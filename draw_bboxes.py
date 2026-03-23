@@ -119,5 +119,5 @@ if __name__ == "__main__":
         exit()
     name = sys.argv[1]
 
-    graph_m2("data/"+name+".sqlite", name, "cent", 4096,255)
+    graph_m2("data/"+name+".sqlite", name, "cent", 4096,256)
 
