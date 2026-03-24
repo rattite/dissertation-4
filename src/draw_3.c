@@ -7,16 +7,13 @@
 #include "m3.h"
 
 void print_out_node(Node2 *n, FILE *f){
+	fprintf(f,"%d,%.0f,%.0f,%.0f,%.0f\n", n->depth, n->boundaries->min_x, n->boundaries->min_y, n->boundaries->max_x, n->boundaries->max_y);
+	fflush(f);
 	if (n->leaf != 1){
 		for (int i=0;i<4;i++){
 			print_out_node(n->children[i],f);
 		}
-	} else{
-		fprintf(f,"%.6f,%.6f,%.6f,%.6f\n", n->boundaries->min_x, n->boundaries->min_y, n->boundaries->max_x, n->boundaries->max_y);
-		fflush(f);
-
-	}
-
+	}	
 }	
 
 int main(int argc, char *argv[]){
@@ -31,7 +28,10 @@ int main(int argc, char *argv[]){
 	int bnum = 0;
 	bbox **clusters = read_bboxes_from_file(argv[7],&bnum);
 	Node2 **n = make_trees(p,atoi(argv[4]),world,clusters,bnum,atoi(argv[5]),atoi(argv[6]));
-	for (int i=0;i<bnum+1;i++){
+	print_out_node(n[0],extra_stream);
+	for (int i=1;i<bnum+1;i++){
+		fprintf(extra_stream,"%d\n", i);
+		fflush(extra_stream);
 		print_out_node(n[i],extra_stream);
 	}
 	for (int i=0;i<atoi(argv[4]);i++){

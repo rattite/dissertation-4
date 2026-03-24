@@ -62,7 +62,7 @@ query **read_queries_from_file(char *filename, int *qnum){
 		printf("wow2! error opening the file!\n");
 		return NULL;
 	}
-	query **q = malloc(256*sizeof(query *));
+	query **q = malloc(2048*sizeof(query *));
 	//format: one double on each line
 	char *line = NULL;
     	size_t len = 0;

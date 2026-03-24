@@ -9,6 +9,7 @@ import numpy as np
 import geopandas as gpd
 from shapely.geometry import box, MultiPolygon
 import sqlite3
+import math
 #we just get it from the table and such
 base_shape = {'u': [np.array([0, 1]), np.array([1, 0]), np.array([0, -1])],
               'd': [np.array([0, -1]), np.array([-1, 0]), np.array([0, 1])],
@@ -44,6 +45,7 @@ def hilbert_curve(order, orientation):
         return base_shape[orientation]
 
 def main(name,shapefile=None):
+
     con = sqlite3.connect("data/"+name+".sqlite")
     cur = con.cursor()
     res = cur.execute("SELECT start FROM large_parts_ind")
@@ -67,6 +69,9 @@ def main(name,shapefile=None):
     cur.close()
     #fig,ax=plt.subplots(facecolor="cornflowerblue")
     fig,ax=plt.subplots(facecolor="lightgray")
+
+    ax.set_xlim(b[0]-2000, b[2]+2000)
+    ax.set_ylim(b[1]-2000,b[3]+2000)
 
     mask_geom = None
     if shapefile:
@@ -92,9 +97,20 @@ def main(name,shapefile=None):
     curve = hilbert_curve(order, 'u')
     curve = np.array(curve)
     start_pointer = 0
-    cmap = plt.get_cmap("viridis")
-    #cmap = plt.get_cmap("PRGn")
-    colours = cmap(np.linspace(0, 1, 16))
+    cmap = plt.get_cmap("vanimo")
+    print(len(starts))
+    space = np.linspace(0,1,len(starts))
+    colours = cmap(3*space**2-2*space**3)
+
+
+
+
+    x = np.linspace(-1, 1, len(starts))
+    warped_x = np.sign(x) * np.abs(x)**(1/1.5)
+    sample_indices = (warped_x + 1) / 2
+    cmap = plt.get_cmap("vanimo")
+    colours = cmap(sample_indices)
+
     ccx = np.array([min_x+xstep/2+np.sum(curve[:i][:,0], 0)*xstep for i in range(len(curve)+1)])
     ccy = np.array([min_y+ystep/2+np.sum(curve[:i][:,1], 0)*ystep for i in range(len(curve)+1)])
     ccz = np.stack((ccx,ccy),axis=1)
@@ -106,20 +122,58 @@ def main(name,shapefile=None):
     point = 0
     p = np.array([0,0])
     print(starts)
-    ax.set_xlim(min_x,min_x+x_len)
-    ax.set_ylim(min_y,min_y+y_len)
+
+    black = [[0] * 16 for _ in range(16)]    #we index by rows, then columns
+    #eg. black[0][1] = (1,0)
+    x_pt = 0
+    y_pt = 0
     for i in range(4**order):
+        #print(x_pt,y_pt) these are correct
+        if starts[point] == i:
+            point += 1
+        black[y_pt][x_pt] = point
+        if i == len(curve):
+            break
+        x_pt += curve[i][0]
+        y_pt += curve[i][1]
+    point = 0
+    for i in range(4**order):
+        xlow = min_x+p[0]*xstep
+        ylow = min_y+p[1]*ystep
+        xup = xlow+xstep
+        yup = ylow+ystep
 
-
-        cell_polygon = box(min_x+p[0]*xstep, min_y+p[1]*ystep,min_x+(1+p[0])*xstep,min_y+(1+p[1])*ystep)
+        cell_polygon = box(xlow, ylow,xup,yup)
         should_draw = True
         if mask_geom:
             should_draw = cell_polygon.intersects(mask_geom)
         if starts[point] == i:
             point += 1
         part.append(point)
+        if (1==1):
+            try:
+                if p[0] == 15 or black[p[1]][p[0]]!=black[p[1]][p[0]+1]:
+                    ax.plot((xup,xup),(ylow,yup),c="black",linewidth=2)
+            except IndexError:
+                pass
+            try:
+                if p[0] == 0 or black[p[1]][p[0]]!=black[p[1]][p[0]-1]:
+                    ax.plot((xlow,xlow),(ylow,yup),c="black",linewidth=2)
+            except IndexError:
+                pass
+            try:
+                if p[1] == 0 or black[p[1]][p[0]]!=black[p[1]-1][p[0]]:
+                    ax.plot((xlow,xup),(ylow,ylow),c="black",linewidth=2)
+            except IndexError:
+                pass
+            try:
+                if p[1] == 15 or black[p[1]][p[0]]!=black[p[1]+1][p[0]]:
+                    ax.plot((xlow,xup),(yup,yup),c="black",linewidth=2)
+            except IndexError:
+                pass
         if should_draw:
-            rect = patches.Rectangle((min_x+p[0]*xstep,min_y+p[1]*ystep), xstep, ystep, linewidth=0, facecolor=colours[point%16], alpha=1)
+
+            rect = patches.Rectangle((xlow,ylow), xstep, ystep, linewidth=0, facecolor=colours[point%16], alpha=1)
             ax.add_patch(rect)
         #indent this if you're lam
         ax.plot(ccz[i:i+2][:,0],ccz[i:i+2][:,1],"w-",alpha=0.8)

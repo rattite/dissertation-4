@@ -7,16 +7,14 @@
 #include "m2.h"
 
 void print_out_node(Node2 *n, FILE *f){
+	fprintf(f,"%d,%.0f,%.0f,%.0f,%.0f\n", n->depth, n->boundaries->min_x, n->boundaries->min_y, n->boundaries->max_x, n->boundaries->max_y);
+	fflush(f);
+
 	if (n->leaf != 1){
 		for (int i=0;i<4;i++){
 			print_out_node(n->children[i],f);
 		}
-	} else{
-		fprintf(f,"%.6f,%.6f,%.6f,%.6f\n", n->boundaries->min_x, n->boundaries->min_y, n->boundaries->max_x, n->boundaries->max_y);
-		fflush(f);
-
-	}
-
+	} 
 }	
 
 int main(int argc, char *argv[]){
