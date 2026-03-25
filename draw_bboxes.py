@@ -127,7 +127,7 @@ def graph_m2(filename, tab, col, sam, min_leaf,shapefile=None):
         print(boax)
     """
         #graphing time, i suppose!
-    fig,ax=plt.subplots(figsize=(8,8))
+    fig,ax=plt.subplots(figsize=(10,10))
     """
     ax.set_xlim(min(float(t[0]) for t in bboxes)-1, max(float(t[2]) for t in bboxes)+1)
     ax.set_ylim(min(float(t[1]) for t in bboxes)-1, max(float(t[3]) for t in bboxes)+1)

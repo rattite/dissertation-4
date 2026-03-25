@@ -85,7 +85,7 @@ class test_case(BaseEstimator):
         return {}
     def fit(self, X=None, y=None):
         runs = []
-        for _ in range(3):
+        for _ in range(4):
             self.run(**X)
             runs.append(self.times[-1])
 
@@ -163,11 +163,12 @@ class test_case(BaseEstimator):
             if 'w' in locals():
                 try: os.close(w)
                 except: pass
+        time.sleep(0.5)
 
 class good_case(test_case):
     def __init__(self):
         super().__init__()
-        self.label = "Good"
+        self.label = "R* Tree"
     def subp(self,filename:str, tab:str, col:str, queries_file:str,w):
         return subprocess.Popen(["bin/goodtest",filename,tab,col,queries_file,str(w)],pass_fds=(w,))
 
@@ -194,7 +195,7 @@ class m1_case(test_case):
         super().__init__()
         self.ind_depth = ind_depth
         self.pnum = pnum
-        self.label = "M1"
+        self.label = "Index-Ranges"
     @classmethod
     def get_param_grid(cls):
         return {"ind_depth": [4,6], "pnum": [16,32,64]}
@@ -210,7 +211,7 @@ class m2_case(test_case):
         super().__init__()
         self.ind_depth = ind_depth
         self.min_leaf = min_leaf
-        self.label = "M2"
+        self.label = "Grid"
     @classmethod
     def get_param_grid(cls):
         return {"ind_depth": [4,6], "min_leaf": [128,256]}
@@ -224,7 +225,7 @@ class m3_case(test_case):
         self.b_dep = b_dep
         self.c_min = c_min
         self.c_dep = b_dep
-        self.label = "M3"
+        self.label = "Grid+Clustering"
     @classmethod
     def get_param_grid(cls):
         return {"b_min": [64,128,256], "c_min": [64,128,256],"b_dep":[4],"c_dep":[4]}
@@ -275,14 +276,15 @@ def select_best_from_list(cases:list[test_case]):
             best[i.label] = i
     return best
 
-def graph_final_results(cases:list[test_case]):
+def graph_final_results(cases:list[test_case],flag):
+    fig,ax = plt.subplots(figsize=(10,10))
     xlabs = []
     y = []
     best = select_best_from_list(cases)
     for case in best.values():
         y.append(case.times)
         xlabs.append(case.label)
-    bp = plt.boxplot(y,patch_artist=True,tick_labels=xlabs,showfliers=False)
+    bp = ax.boxplot(y,patch_artist=True,tick_labels=xlabs,showfliers=False)
     for patch in bp['boxes']:
         patch.set_facecolor('mediumseagreen')
         for median in bp['medians']:
@@ -290,13 +292,17 @@ def graph_final_results(cases:list[test_case]):
             median.set_linewidth(2)
 
     #adds labels, title, etc to graph
-    plt.yscale('log',base=10)
-    plt.ylabel("log(time)")
-    plt.title("Average time taken for each test case")
-    plt.grid(axis='y', linestyle='-', alpha=0.5)
+    ax.set_yscale('log',base=10)
+    ax.set_ylabel("log(time)",fontsize=16)
+    ax.tick_params(axis='both', labelsize=20)    
+    if flag == 0:
+        ax.set_title("Times taken to execute a set of queries on the whole dataset",fontsize=20)
+    else:
+        ax.set_title("Times taken to execute a set of queries on the clusters",fontsize=20)
+    ax.grid(axis='y', linestyle='-', alpha=0.5)
 
-    plt.savefig("img/res.png",bbox_inches="tight",dpi=300)
-    plt.show()
+    fig.savefig("img/res"+str(int(time.time()))+".png",bbox_inches="tight",dpi=300)
+    plt.close(fig)
 
 
 
@@ -373,72 +379,36 @@ def write_out_queries(filename:str, queries: list[query]):
     print("written queries to file!\n")
 
 
+def rt(name,flag,reps):
+    qname = "data/"+name
+    cluster.clustering(qname+".dat")
+    if flag == 0:
+        query.generate_query_set(qname+".sqlite",name,"cent",256,32,32,4096,qname+".queries")
+    else:
+        query.generate_clus_query_set(qname+".sqlite",name,"cent",256,qname+".lizard",qname+".queries")
 
-if __name__ == "__main__":
+    
+    X = {"filename": qname + ".sqlite","tab": name,"col": "cent","queries_file": qname + ".queries"}
+    X1 = {"filename": qname + ".sqlite","tab": name,"col": "cent","queries_file": qname + ".queries", "clus": qname+".lizard"}
 
-    for i in range(1,len(sys.argv)):
+    cases = []
+    #cases.append(naive_case.optimise(X))
+    cases.append(good_case.optimise(X))
+    cases.append(m1_case.optimise(X))
+    cases.append(m2_case.optimise(X))
+    m3c = m3_case.optimise(X1)
+    for case in cases:
+        for i in range(reps):
+            case.run(qname+".sqlite",name,"cent",qname+".queries")
+    for i in range(reps):
+        m3c.run(qname+".sqlite",name,"cent",qname+".queries",qname+".lizard")
+    cases.append(m3c)
+    test_case.serialise_list("data/"+name+str(int(time.time()))+".cases",cases)
 
-        name = sys.argv[i]
-        qname = "data/"+name
-        query.generate_query_set(qname+".sqlite",name,"cent",512,32,32,4096,qname+".queries")
-        cluster.clustering(qname+".dat")
-        query.generate_clus_query_set(qname+".sqlite",name,"cent",512,qname+".lizard",qname+".cqueries")
+    graph_final_results(cases,flag)
 
-        
-        X = {"filename": qname + ".sqlite","tab": name,"col": "cent","queries_file": qname + ".queries"}
-        X1 = {"filename": qname + ".sqlite","tab": name,"col": "cent","queries_file": qname + ".queries", "clus": qname+".lizard"}
-
-        cases = []
-        cases.append(naive_case.optimise(X))
-        cases.append(good_case.optimise(X))
-        cases.append(m1_case.optimise(X))
-        cases.append(m2_case.optimise(X))
-        m3c = m3_case.optimise(X1)
-        for case in cases:
-            for i in range(15):
-                case.run(qname+".sqlite",name,"cent",qname+".queries")
-        for i in range(15):
-                m3c.run(qname+".sqlite",name,"cent",qname+".queries",qname+".lizard")
-        cases.append(m3c)
-        test_case.serialise_list("data/"+name+".cases",cases)
-
-        graph_final_results(cases)
+rt(sys.argv[1],0,int(sys.argv[2]))
+time.sleep(5)
+rt(sys.argv[1],1,int(sys.argv[2]))
 
 
-"""
-        t1 = time.time()
-        #query.generate_clus_query_set(qname+".sqlite",name,"cent",10,qname+".lizard",qname+".cqueries")
-        cases = []
-        cases.append(naive_case())
-        cases.append(good_case())
-        #cases.append(index_case(6))
-        #cases.append(index_case(8))
-        #cases.append(m1_case(6,64))
-        cases.append(m1_case(6,16))
-        cases.append(m2_case(4,256))
-        #cases.append(m2_case(4,128))
-        cases.append(m3_case(4,256,4,64,qname+".lizard"))
-        #cases.append(m3_case(4,64,4,64,qname+".lizard"))
-        #test_case.serialise_list("test.json",cases)
-        #cases2 = test_case.deserialise_list("test.json")
-        print("initialising database")
-        subprocess.run(["./bin/reset",qname+".sqlite",name])
-        print(len(cases))
-        for case in cases:
-            for i in range(3):
-                #fix iteration so we don't have to make the partitioning each time
-                print(case.label)
-                case.run(qname+".sqlite",name,"cent",qname+".queries")
-                sleep(0.142857)
-
-        print("final times for each case:")
-        for case in cases:
-            print(sum(case.times)/len(case.times))
-        graph_final_results(cases) 
-        #graph_separate(cases2,(2,2))
-        test_case.serialise_list("results/"+name+".dat",cases)
-    t2 = time.time()
-    print("real time taken: "+str(t2-t1))
-
-    #cleanup
-    """

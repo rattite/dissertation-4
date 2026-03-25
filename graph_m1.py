@@ -68,7 +68,7 @@ def main(name,shapefile=None):
     print(y_len)
     cur.close()
     #fig,ax=plt.subplots(facecolor="cornflowerblue")
-    fig,ax=plt.subplots(facecolor="lightgray")
+    fig,ax=plt.subplots(facecolor="lightgray",figsize=(10,10))
 
     ax.set_xlim(b[0]-2000, b[2]+2000)
     ax.set_ylim(b[1]-2000,b[3]+2000)

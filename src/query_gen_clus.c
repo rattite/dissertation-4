@@ -24,7 +24,7 @@ int main(int argc, char *argv[]){
 	float rad;
 	for (int i=0;i<bnum;i++){
 		bbox_get_lengths(clus[i],&xlen,&ylen);
-		float size = sqrt(xlen*ylen/4);
+		float size = sqrt(xlen*ylen/8);
 
 		for (int j=0;j<no;j++){
 			f = ((float)rand())/RAND_MAX;

@@ -10,7 +10,7 @@ Node2 **make_trees(point **points, int pnum, bbox *bounds, bbox **clusters, int 
 //from then, it's easy: we can call the regular functions with the trees and such
 //
 	point ***p = malloc((cluster_count+1)*sizeof(point **));
-	printf("cluster count is %d\n", cluster_count);
+	//printf("cluster count is %d\n", cluster_count);
 	int pcount[cluster_count+1];
 	for (int i = 0;i<cluster_count+1;i++){p[i] = malloc(pnum*sizeof(point *));pcount[i]=0;} //we can and will realloc later #this line is overflowing somehow when c_count > 1
 	for (int i=0;i<pnum;i++){
@@ -46,7 +46,7 @@ void partition_through_multiple_trees(sqlite3 *db, char *tab, char *col, char *i
 	char name[256];
 	for (int i=0;i<c_count+1;i++){
 		snprintf(name,sizeof(name),"%s_%d",partname,i);
-		printf("%s\n", name);
+		//printf("%s\n", name);
 		add_node_part_help(db,tab,col,ind,n[i],name);
 	}
 	printf("added tables!\n");

@@ -101,7 +101,7 @@ def draw_range_query(points,shapefile=None):
     if len(points) == 0:
         points = np.random.rand(100, 2)
     radius = 28571
-    fig,ax=plt.subplots()
+    fig,ax=plt.subplots(figsize=(10,10))
     ax.get_xaxis().set_visible(False)
     ax.get_yaxis().set_visible(False)
     #ax.set_title("Example of a range query on spatial data")
@@ -250,8 +250,7 @@ def draw_range_partitions():
 
 
 if __name__ == "__main__":
-    draw_multiple_hilbert([1,2,4,6],(2,2))
-    """
+    #draw_multiple_hilbert([1,2,4,6],(2,2))
     if len(sys.argv) < 4:
         print("how to use: (db_name) (data_name) (sample size) optional: shapefile")
         quit()
@@ -260,4 +259,3 @@ if __name__ == "__main__":
         draw_range_query(p,sys.argv[4])
     else:
         draw_range_query(p)
-    """

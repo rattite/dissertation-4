@@ -263,8 +263,6 @@ void beter15(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, d
 		dbr->ranges[p_count] = newr;
 		p_count++;
 	}
-	printf("rl len is %d\n", rl->len);
-	printf("p_count is %d\n", p_count);
 	range **new_r = realloc(dbr->ranges,p_count*sizeof(range *));
 	dbr->ranges = new_r;
 	dbr->len = p_count;
@@ -335,7 +333,6 @@ void beter2(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, do
 	normalise_bbox(b, world);
 	rangelist *rl = get_ranges(b,base,ind_depth); 
 	for (int i=0;i<rl->len;i++){
-		printf("range is %d %d\n", rl->ranges[i]->start, rl->ranges[i]->end);
 	}
 		
 	char r_sql[256];
@@ -352,8 +349,6 @@ void beter2(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, do
 		dbr->ranges[p_count] = newr;
 		p_count++;
 	}
-	printf("rl len is %d\n", rl->len);
-	printf("p_count is %d\n", p_count);
 	range **new_r = realloc(dbr->ranges,p_count*sizeof(range *));
 	dbr->ranges = new_r;
 	dbr->len = p_count;
@@ -410,8 +405,6 @@ void beter2(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, do
 	int id;
 	double rad2 = rad * rad;
 	for (int i =0;i<r_count;i++){
-		printf("part is %d\n", i);
-		printf("range is %d %d\n", part_ranges->ranges[i]->start, part_ranges->ranges[i]->end);
 		snprintf(sql,sizeof(sql),"SELECT ogc_fid, geom FROM %s_part_%d WHERE %s BETWEEN ? AND ?", tab, parts[i], ind);
 		sqlite3_prepare_v2(db,sql,-1,&get_stmt,NULL);
 		sqlite3_bind_int(get_stmt,1,part_ranges->ranges[i]->start);

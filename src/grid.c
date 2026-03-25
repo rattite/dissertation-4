@@ -33,7 +33,7 @@ bbox *create_bbox(double min_x, double min_y, double max_x, double max_y){
 }
 
 void print_bbox(bbox *b){
-	printf("bbox has min (%f %f), max (%f %f)\n", b->min_x, b->min_y, b->max_x, b->max_y);
+	//printf("bbox has min (%f %f), max (%f %f)\n", b->min_x, b->min_y, b->max_x, b->max_y);
 }
 
 rangelist *make_partitions_by_population(unsigned int *indices, int maxparts, int pcount, int depth, int grouping) {

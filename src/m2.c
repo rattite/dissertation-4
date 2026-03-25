@@ -242,13 +242,11 @@ void add_node_part_help(sqlite3 *db, char *tab, char *col, char *ind, Node2 *n, 
 				char name[256];
 				char sql[256];
 				snprintf(name,sizeof(name),"%s_%s_%d",tab,partname,n->ind);
-				printf("name is %s\n", name);
 				snprintf(sql,sizeof(sql), "CREATE TABLE %s (ogc_fid INTEGER NOT NULL PRIMARY KEY, %s INTEGER NOT NULL)",name, ind);
 				if(sqlite3_exec (db, sql, NULL, NULL, NULL)!=SQLITE_OK){printf("error: %s\n", sqlite3_errmsg(db));}
 				//add geometry column
     				snprintf(sql,sizeof(sql),"SELECT AddGeometryColumn(\'%s\', 'geom', 3857, 'POINT', 2)",name);
     				if(sqlite3_exec (db, sql, NULL, NULL, NULL)!=SQLITE_OK){printf("error: %s\n", sqlite3_errmsg(db));}
-				printf("completed adding part!\n");
 		}else{
 				for (int i=0;i<4;i++){
 						add_node_part_help(db,tab,col,ind,n->children[i],partname);

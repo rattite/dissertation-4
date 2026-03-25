@@ -200,22 +200,23 @@ def graph_clusters(points, labels,bboxes, shapefile=None):
     ax.set_axis_off()
 
     colors = np.array(["lightcoral","mediumseagreen", "cornflowerblue", "orchid", "orange", "turquoise", "mediumslateblue", "pink", "#000000"])
-    ax.set_xlim(-470000,-370000)
-    ax.set_ylim(6480000,6580000)
+    ax.set_xlim(-480000,-370000)
+    ax.set_ylim(6480000,6590000)
     if shapefile:
         region = gpd.read_file(shapefile)
         region = region.to_crs(epsg=3857)
         #scol = (14/16, 255/256, 14/16)
         scol = "palegoldenrod"
         region.plot(ax=ax, color=scol, edgecolor="black")
-    ax.scatter(points[:, 0], points[:, 1], s=32, color=colors[labels],marker=".",)
+    ax.scatter(points[:, 0], points[:, 1], s=12, color=colors[labels])
 
     for b in bboxes:
         print(b)
-        rectangle = patches.Rectangle((b[0], b[1]), b[2]-b[0], b[3]-b[1], linewidth=2, edgecolor='sienna', fill=False)
+        rectangle = patches.Rectangle((b[0], b[1]), b[2]-b[0], b[3]-b[1], linewidth=6, edgecolor='sienna', fill=False)
         ax.add_patch(rectangle)
-    plt.savefig("img/clus_"+str(time.time())+".png",bbox_inches="tight",dpi=300)
-    plt.show()
+    fig.savefig("img/clus_"+str(int(time.time()))+".png",bbox_inches="tight",dpi=300)
+    plt.close(fig)
+    #plt.show()
 
 def clustering(filename,shapefile=None):
     data = get_data(filename)
