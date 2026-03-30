@@ -136,7 +136,7 @@ def rect_circle(min_x, max_x, min_y, max_y, c_x, c_y, rad):
 
 def draw_hilbert_curve(order, ax):
     ax.set_aspect('equal','box')
-    ax.set_title("Order = "+str(order),fontsize=20)
+    ax.set_title("Order = "+str(order),fontsize=28)
     ax.set_ylim(-0.02,1.02)
     ax.set_xlim(-.02,1.02)
     ax.axis('off')
@@ -250,7 +250,8 @@ def draw_range_partitions():
 
 
 if __name__ == "__main__":
-    #draw_multiple_hilbert([1,2,4,6],(2,2))
+    draw_multiple_hilbert([1,2,4,6],(2,2))
+    """
     if len(sys.argv) < 4:
         print("how to use: (db_name) (data_name) (sample size) optional: shapefile")
         quit()
@@ -259,3 +260,4 @@ if __name__ == "__main__":
         draw_range_query(p,sys.argv[4])
     else:
         draw_range_query(p)
+    """

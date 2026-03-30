@@ -407,8 +407,8 @@ def rt(name,flag,reps):
 
     graph_final_results(cases,flag)
 
-rt(sys.argv[1],0,int(sys.argv[2]))
-time.sleep(5)
+#rt(sys.argv[1],0,int(sys.argv[2]))
+#time.sleep(5)
 rt(sys.argv[1],1,int(sys.argv[2]))
 
 
