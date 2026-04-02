@@ -56,9 +56,8 @@ int main(int argc, char *argv[]){
 		}
 		printf("going!\n");
 		fclose(test);
-		FILE *extra_stream;
-		if (argc == 11){
-		extra_stream = fdopen(atoi(argv[10]), "w");
+		FILE *extra_stream = fopen("lizard.results","w");
+		if (argc == 10){
 		}
 
 		sqlite3 *db = setup_db(argv[1]);
@@ -90,15 +89,18 @@ int main(int argc, char *argv[]){
 		Node2 **n = make_trees(p,4096,world,clusters,bnum,base_minp, c_minp);
 		partition_through_multiple_trees(db,argv[2],argv[3],"q",n,"method3",bnum,r,base_depth,c_depth);
 		sqlite3_exec(db, "SELECT UpdateLayerStatistics()",NULL,NULL,NULL);
-    		clock_gettime(CLOCK_MONOTONIC, &start);
 		for (int i=0;i<qnum;i++){
-			method_3_wrapper(db,argv[2],argv[3],"q",q[i]->x,q[i]->y,q[i]->rad,100000,n,r,"method3",bnum,base_depth,c_depth);
+
+    			clock_gettime(CLOCK_MONOTONIC, &start);
+			double ret = method_3_wrapper(db,argv[2],argv[3],"q",q[i]->x,q[i]->y,q[i]->rad,100000,n,r,"method3",bnum,base_depth,c_depth);
+			clock_gettime(CLOCK_MONOTONIC, &end);
+			double elapsed = (end.tv_sec - start.tv_sec) +(end.tv_nsec - start.tv_nsec) / 1e9;
+			if (argc == 10){
+			fprintf(extra_stream,"%.9f,%.6f\n", elapsed,ret);
+			fflush(extra_stream);
+			}
 		}
-    		clock_gettime(CLOCK_MONOTONIC, &end);
-    		double elapsed = (end.tv_sec - start.tv_sec) +(end.tv_nsec - start.tv_nsec) / 1e9;
-		if (argc == 11){
-		fprintf(extra_stream,"%.9f\n", elapsed);
-		fflush(extra_stream);
+		if (argc == 10){
 		fclose(extra_stream);
 		}
 		sqlite3_close(db);

@@ -68,13 +68,13 @@ int main(int argc, char *argv[]){
 		int rangeno = atoi(argv[6]);
 		if (rangeno == 0){printf("wrong!\n");}
 		sqlite3 *db = setup_db(argv[1]);
-		FILE *extra_stream = fdopen(atoi(argv[7]), "w");
+		FILE *extra_stream = fopen("lizard.results","w");
 
 		//gets queries
 		int qnum = 0;
 		query **q = read_queries_from_file(argv[4],&qnum);
 
-		if (atoi(argv[8])==1){
+		if (atoi(argv[7])==1){
 			add_index(db,argv[2],argv[3],base,"test",depth);
 			int count = 0;
 			unsigned int *indx = get_all_indices(db,argv[2],"test",depth,4,0,&count);
@@ -85,15 +85,16 @@ int main(int argc, char *argv[]){
 			remove_index_col(db,"large","arg1");
 			sqlite3_close(db);
 		} else{
-			clock_gettime(CLOCK_MONOTONIC, &start);
 
 			for (int i=0;i<qnum;i++){
-				beter2(db, argv[2], argv[3], "test", q[i]->x, q[i]->y, q[i]->rad, 100000, base, 0,depth);
+				clock_gettime(CLOCK_MONOTONIC, &start);
+				double ret = beter2(db, argv[2], argv[3], "test", q[i]->x, q[i]->y, q[i]->rad, 100000, base, 0,depth);
+				clock_gettime(CLOCK_MONOTONIC, &end);
+				double elapsed = (end.tv_sec - start.tv_sec) +(end.tv_nsec - start.tv_nsec) / 1e9;
+				fprintf(extra_stream,"%.9f,%.6f\n", elapsed,ret);
+				fflush(extra_stream);
+
 			}
-			clock_gettime(CLOCK_MONOTONIC, &end);
-			double elapsed = (end.tv_sec - start.tv_sec) +(end.tv_nsec - start.tv_nsec) / 1e9;
-			fprintf(extra_stream,"%.9f\n", elapsed);
-			fflush(extra_stream);
 			fclose(extra_stream);
 			//remove_index_col(db,argv[2],argv[3]);
 			sqlite3_close(db);

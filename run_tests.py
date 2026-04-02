@@ -73,6 +73,7 @@ class test_case(BaseEstimator):
 
     def __init__(self):
         self.times = []
+        self.hit = []
         pass
 
     def mean_time(self):
@@ -85,7 +86,7 @@ class test_case(BaseEstimator):
         return {}
     def fit(self, X=None, y=None):
         runs = []
-        for _ in range(4):
+        for _ in range(2):
             self.run(**X)
             runs.append(self.times[-1])
 
@@ -113,7 +114,7 @@ class test_case(BaseEstimator):
                 best_case = obj
         
         return best_case
-    def subp(self,filename:str, tab:str, col:str, queries_file:str,w):
+    def subp(self,filename:str, tab:str, col:str, queries_file:str):
         pass
 
     def to_dict(self):
@@ -142,42 +143,45 @@ class test_case(BaseEstimator):
         f.close()
         return cases
 
+    def set_results(self):
+        f = open("lizard.results","r")
+        tc = 0
+        hits = []
+        time = 0
+        lines = f.readlines()
+        for line in lines:
+            tc += 1
+            l = line.split(",")
+            time += float(l[0])
+            if float(l[1])>0:
+                hits.append(float(l[1]))
+            else:
+                hits.append(10**(-3))
+        self.times.append(time/tc)
+        self.hit.append(geometric_mean(hits))
+
+
+
     def run(self,filename:str, tab:str, col:str, queries_file:str):
         p1 = subprocess.run(["bin/reset",filename,tab])
-
-
-        r,w = os.pipe()
-        try:
-            process = self.subp(filename,tab,col,queries_file,w)
-            print(process)
-            os.close(w)
-            process.wait()
-            with os.fdopen(r, 'r') as secret_stream:
-                data = secret_stream.read()
-                print(f"Captured from FD 3: {data}")
-                print(f"data is as follows: {data}")
-                self.times.append(float(data))
-                #if we redirect this to an output file, it gets printed at the end
-                #do processing or something, save to local "time" variable
-        finally:
-            if 'w' in locals():
-                try: os.close(w)
-                except: pass
+        process = self.subp(filename,tab,col,queries_file)
+        process.wait()
+        self.set_results()
         time.sleep(0.5)
 
 class good_case(test_case):
     def __init__(self):
         super().__init__()
         self.label = "R* Tree"
-    def subp(self,filename:str, tab:str, col:str, queries_file:str,w):
-        return subprocess.Popen(["bin/goodtest",filename,tab,col,queries_file,str(w)],pass_fds=(w,))
+    def subp(self,filename:str, tab:str, col:str, queries_file:str):
+        return subprocess.Popen(["bin/goodtest",filename,tab,col,queries_file])
 
 class naive_case(test_case):
     def __init__(self):
         super().__init__()
         self.label = "Naive"
-    def subp(self,filename:str, tab:str, col:str, queries_file:str,w):
-        return subprocess.Popen(["bin/naivetest",filename,tab,col,queries_file,str(w)],pass_fds=(w,))
+    def subp(self,filename:str, tab:str, col:str, queries_file:str):
+        return subprocess.Popen(["bin/naivetest",filename,tab,col,queries_file])
 
 class index_case(test_case):
     def __init__(self, ind_depth=4):
@@ -187,8 +191,8 @@ class index_case(test_case):
     @classmethod
     def get_param_grid(cls):
         return {"ind_depth": [4,6]}
-    def subp(self,filename:str, tab:str, col:str, queries_file:str,w):
-        return subprocess.Popen(["bin/indextest",filename,tab,col,queries_file,str(self.ind_depth),str(w)],pass_fds=(w,))
+    def subp(self,filename:str, tab:str, col:str, queries_file:str):
+        return subprocess.Popen(["bin/indextest",filename,tab,col,queries_file,str(self.ind_depth)])
 
 class m1_case(test_case):
     def __init__(self,ind_depth=6,pnum=16):
@@ -200,11 +204,11 @@ class m1_case(test_case):
     def get_param_grid(cls):
         return {"ind_depth": [4,6], "pnum": [16,32,64]}
 
-    def subp(self,filename:str, tab:str, col:str, queries_file:str,w):
+    def subp(self,filename:str, tab:str, col:str, queries_file:str):
         print("ready to go")
-        subprocess.run(["bin/m1test",filename,tab,col,queries_file,str(self.ind_depth),str(self.pnum),str(w),str(1)],pass_fds=(w,))
+        subprocess.run(["bin/m1test",filename,tab,col,queries_file,str(self.ind_depth),str(self.pnum),str(1)])
         print("ran first process")
-        return subprocess.Popen(["bin/m1test",filename,tab,col,queries_file,str(self.ind_depth),str(self.pnum),str(w),str(0)],pass_fds=(w,))
+        return subprocess.Popen(["bin/m1test",filename,tab,col,queries_file,str(self.ind_depth),str(self.pnum),str(0)])
 
 class m2_case(test_case):
     def __init__(self,ind_depth=6,min_leaf=256):
@@ -215,8 +219,8 @@ class m2_case(test_case):
     @classmethod
     def get_param_grid(cls):
         return {"ind_depth": [4,6], "min_leaf": [128,256]}
-    def subp(self,filename:str, tab:str, col:str, queries_file:str,w):
-        return subprocess.Popen(["bin/m2test",filename,tab,col,queries_file,str(self.ind_depth),str(self.min_leaf),str(w)],pass_fds=(w,))
+    def subp(self,filename:str, tab:str, col:str, queries_file:str):
+        return subprocess.Popen(["bin/m2test",filename,tab,col,queries_file,str(self.ind_depth),str(self.min_leaf)])
 
 class m3_case(test_case):
     def __init__(self,b_min=256,c_min=128,b_dep=4,c_dep=4):
@@ -229,32 +233,15 @@ class m3_case(test_case):
     @classmethod
     def get_param_grid(cls):
         return {"b_min": [64,128,256], "c_min": [64,128,256],"b_dep":[4],"c_dep":[4]}
-    def subp(self,filename:str, tab:str, col:str, queries_file:str,clus:str,w):
-        return subprocess.Popen(["bin/m3test",filename,tab,col,queries_file,clus,str(self.b_min),str(self.b_dep),str(self.c_min),str(self.c_dep),str(w)],pass_fds=(w,))
-
+    def subp(self,filename:str, tab:str, col:str, queries_file:str,clus:str):
+        return subprocess.Popen(["bin/m3test",filename,tab,col,queries_file,clus,str(self.b_min),str(self.b_dep),str(self.c_min),str(self.c_dep)])
     def run(self,filename:str, tab:str, col:str, queries_file:str,clus:str):
         p1 = subprocess.run(["bin/reset",filename,tab])
+        process = self.subp(filename,tab,col,queries_file,clus)
+        process.wait()
+        self.set_results()
+        time.sleep(0.5)
 
-
-        r,w = os.pipe()
-        try:
-            print(clus)
-            process = self.subp(filename,tab,col,queries_file,clus,w)
-            print(clus)
-            print(process)
-            os.close(w)
-            process.wait()
-            with os.fdopen(r, 'r') as secret_stream:
-                data = secret_stream.read()
-                print(f"Captured from FD 3: {data}")
-                print(f"data is as follows: {data}")
-                self.times.append(float(data))
-                #if we redirect this to an output file, it gets printed at the end
-                #do processing or something, save to local "time" variable
-        finally:
-            if 'w' in locals():
-                try: os.close(w)
-                except: pass
 
 #
 #
@@ -304,6 +291,39 @@ def graph_final_results(cases:list[test_case],flag):
     fig.savefig("img/res"+str(int(time.time()))+".png",bbox_inches="tight",dpi=300)
     plt.close(fig)
 
+
+
+
+
+
+
+    fig,ax = plt.subplots(figsize=(10,10))
+    xlabs = []
+    y = []
+    best = select_best_from_list(cases)
+    for case in best.values():
+        if case.label != "R* Tree":
+            y.append(case.hit)
+            xlabs.append(case.label)
+    bp = ax.boxplot(y,patch_artist=True,tick_labels=xlabs,showfliers=False)
+    for patch in bp['boxes']:
+        patch.set_facecolor('mediumseagreen')
+        for median in bp['medians']:
+            median.set_color('black')
+            median.set_linewidth(2)
+
+    #adds labels, title, etc to graph
+    ax.set_yscale('log',base=10)
+    ax.set_ylabel("log(HIT!)",fontsize=16)
+    ax.tick_params(axis='both', labelsize=20)    
+    if flag == 0:
+        ax.set_title("HIT! for a set of queries on the whole dataset",fontsize=20)
+    else:
+        ax.set_title("HIT! for set of queries on the clusters",fontsize=20)
+    ax.grid(axis='y', linestyle='-', alpha=0.5)
+
+    fig.savefig("img/HIT"+str(int(time.time()))+".png",bbox_inches="tight",dpi=300)
+    plt.close(fig)
 
 
 
@@ -383,9 +403,9 @@ def rt(name,flag,reps):
     qname = "data/"+name
     cluster.clustering(qname+".dat")
     if flag == 0:
-        query.generate_query_set(qname+".sqlite",name,"cent",256,32,32,4096,qname+".queries")
+        query.generate_query_set(qname+".sqlite",name,"cent",10,32,32,4096,qname+".queries")
     else:
-        query.generate_clus_query_set(qname+".sqlite",name,"cent",256,qname+".lizard",qname+".queries")
+        query.generate_clus_query_set(qname+".sqlite",name,"cent",10,qname+".lizard",qname+".queries")
 
     
     X = {"filename": qname + ".sqlite","tab": name,"col": "cent","queries_file": qname + ".queries"}
@@ -396,19 +416,19 @@ def rt(name,flag,reps):
     cases.append(good_case.optimise(X))
     cases.append(m1_case.optimise(X))
     cases.append(m2_case.optimise(X))
-    m3c = m3_case.optimise(X1)
+    #m3c = m3_case.optimise(X1)
     for case in cases:
         for i in range(reps):
             case.run(qname+".sqlite",name,"cent",qname+".queries")
-    for i in range(reps):
-        m3c.run(qname+".sqlite",name,"cent",qname+".queries",qname+".lizard")
-    cases.append(m3c)
-    test_case.serialise_list("data/"+name+str(int(time.time()))+".cases",cases)
+    #for i in range(reps):
+     #   m3c.run(qname+".sqlite",name,"cent",qname+".queries",qname+".lizard")
+    #cases.append(m3c)
+    test_case.serialise_list("data/"+name+".cases",cases)
 
     graph_final_results(cases,flag)
 
 #rt(sys.argv[1],0,int(sys.argv[2]))
 #time.sleep(5)
-rt(sys.argv[1],1,int(sys.argv[2]))
+rt(sys.argv[1],0,int(sys.argv[2]))
 
 

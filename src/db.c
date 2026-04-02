@@ -46,7 +46,7 @@ bbox *get_db_boundaries(sqlite3 *db, char *tab, char *col){
 }
 
 
-void make_range_with_index(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, double rad, int lim, rule *base, int verbose, int ind_depth){
+double make_range_with_index(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, double rad, int lim, rule *base, int verbose, int ind_depth){
 	//Makes a GOOD range query on a particular table. 
 	clock_t start = clock();
 	point *p = (point *)malloc(sizeof(point));
@@ -55,7 +55,7 @@ void make_range_with_index(sqlite3 *db, char *tab, char *col, char *ind, double 
 	sqlite3_stmt *stmt;
 	//clock_t end = clock();
 	//printf("stage 1 of preprep: %f\n",(double)(end-start)/CLOCKS_PER_SEC);
-
+	int total = 0;
 	bbox *world = get_db_boundaries(db,tab,col);
 	//start = clock();
 	normalise(p,world);
@@ -98,6 +98,7 @@ void make_range_with_index(sqlite3 *db, char *tab, char *col, char *ind, double 
 	sqlite3_bind_double(stmt_2,2,y);
 	sqlite3_bind_double(stmt_2,3,rad);
 	while (sqlite3_step(stmt_2) == SQLITE_ROW){
+		total++;
 		id = sqlite3_column_int(stmt_2, 1);
 	    	const void *blob = sqlite3_column_blob(stmt_2, 0);
 		int blob_size = sqlite3_column_bytes(stmt_2, 0);
@@ -118,6 +119,7 @@ void make_range_with_index(sqlite3 *db, char *tab, char *col, char *ind, double 
 	sqlite3_exec(db, "DELETE FROM candidates", NULL, NULL, NULL);
 	//end = clock();
 	//printf("time taken to execute query: %f\n",(double)(end-start)/CLOCKS_PER_SEC);
+	return (double)found/(double)total;
 }
 
 void write_points_to_file(sqlite3 *db, char *tab, char *col){
@@ -144,8 +146,20 @@ void write_points_to_file(sqlite3 *db, char *tab, char *col){
 }
 
 		
+unsigned int get_tab_size(sqlite3 *db, char *tab){
+	char sql[256];
+	sqlite3_stmt *stmt;
+	snprintf(sql,sizeof(sql),"SELECT COUNT(*) FROM %s", tab);
+	if(sqlite3_prepare_v2(db,sql,-1,&stmt,NULL)!=SQLITE_OK){printf("error %s\n", sqlite3_errmsg(db));}
+	unsigned int out;
+	while (sqlite3_step(stmt) == SQLITE_ROW){
+		out = (unsigned int)sqlite3_column_int(stmt,0);
+	}
+	sqlite3_finalize(stmt);
+	return out;
+}
 
-void make_naive_range(sqlite3 *db, char *tab, char *col, double x, double y, double rad, int lim, int verbose){
+unsigned int make_naive_range(sqlite3 *db, char *tab, char *col, double x, double y, double rad, int lim, int verbose){
 	//Makes a naive range query. By definition, it's not very good
 	//TODO: look into making a query a struct somehow for future tests
 	sqlite3_stmt *stmt;
@@ -168,6 +182,7 @@ void make_naive_range(sqlite3 *db, char *tab, char *col, double x, double y, dou
 	}
 	sqlite3_finalize(stmt);
 	printf("found %d\n points!\n", count);
+	return count;
 }
 
 void add_index(sqlite3 *db, char *tab, char *col, rule *base, char *name, int depth){

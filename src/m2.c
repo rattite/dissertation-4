@@ -316,7 +316,7 @@ void test_node_help(sqlite3 *db, Node2 *n, int ind_depth){
 	//printf("count is %d\n", count);
 }
 
-void range_4_help(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, double rad, bbox *query, int *found, Node2 *n, rule *base, char *partname, int ind_depth){
+void range_4_help(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, double rad, bbox *query, int *found, int *checked,Node2 *n, rule *base, char *partname, int ind_depth){
 	//if we've found too many points
 	if (*found < 0){return;}
 	//if the query area doesn't interesect the node
@@ -324,10 +324,9 @@ void range_4_help(sqlite3 *db, char *tab, char *col, char *ind, double x, double
 	if (intersect == NULL){return;}
 	if (n->leaf != 1){
 		//performs range queries on child nodes
-		range_4_help(db,tab,col,ind,x,y,rad,query,found,n->children[0],base,partname,ind_depth);
-		range_4_help(db,tab,col,ind,x,y,rad,query,found,n->children[1],base,partname,ind_depth);
-		range_4_help(db,tab,col,ind,x,y,rad,query,found,n->children[2],base,partname,ind_depth);
-		range_4_help(db,tab,col,ind,x,y,rad,query,found,n->children[3],base,partname,ind_depth);
+		for (int qwerty=0;qwerty<4;qwerty++){
+		range_4_help(db,tab,col,ind,x,y,rad,query,found,checked,n->children[qwerty],base,partname,ind_depth);
+		}
 
 	}else{
 		double rad2 = rad*rad;
@@ -397,6 +396,7 @@ void range_4_help(sqlite3 *db, char *tab, char *col, char *ind, double x, double
 		if(sqlite3_prepare_v2(db,s3,-1,&sel_stmt,NULL)!=SQLITE_OK){printf("err4:%s\n", sqlite3_errmsg(db));}
 		//selects all points from candidates
 		while (sqlite3_step(sel_stmt) == SQLITE_ROW){
+			(*checked)++;
 	    	const void *blob = sqlite3_column_blob(sel_stmt, 0);
 	    	int blob_size = sqlite3_column_bytes(sel_stmt, 0);
 	    	gaiaGeomCollPtr geom = gaiaFromSpatiaLiteBlobWkb(blob, blob_size);
@@ -417,7 +417,7 @@ void range_4_help(sqlite3 *db, char *tab, char *col, char *ind, double x, double
 	}
 }
 
-void range_wrapper_help(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, double rad, int limit, Node2 *n, rule *base, char *partname, int ind_depth){
+double range_wrapper_help(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, double rad, int limit, Node2 *n, rule *base, char *partname, int ind_depth){
 	//computes range query box
 	bbox *b = malloc(sizeof(bbox));
 	b->min_x = x-rad;
@@ -427,9 +427,16 @@ void range_wrapper_help(sqlite3 *db, char *tab, char *col, char *ind, double x, 
 	//traverses quad tree, performs separate query for each node:
 	//endforces limit
 	int found = 0;
-	range_4_help(db,tab,col,ind,x,y,rad,b,&found,n,base,partname,ind_depth);
+	int checked = 0;
+	range_4_help(db,tab,col,ind,x,y,rad,b,&found,&checked,n,base,partname,ind_depth);
 	printf("%d points found\n", found);
 	free(b);
+
+	if (found == 0 || checked == 0){
+		return (double)(-1);
+	}
+	return (double)found/(double)checked;
+
 }
 
 //now to write test functions, and hope it all works i suppose!

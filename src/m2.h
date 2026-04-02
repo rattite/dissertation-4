@@ -39,6 +39,6 @@ int get_help(Node2 *start, point *p, int *partnum, rule *r, int ind_depth);
 void add_node_part_help(sqlite3 *db, char *tab, char *col, char *ind, Node2 *n, char *partname);
 void partition_help(sqlite3 *db, char *tab, char *col, char *ind, Node2 *start, rule *r, char *partname, int ind_depth); 
 void test_node_help(sqlite3 *db,Node2 *n, int ind_depth);
-void range_4_help(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, double rad, bbox *query, int *found, Node2 *n, rule *base, char *partname, int ind_depth);
-void range_wrapper_help(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, double rad, int limit, Node2 *n, rule *base, char *partname, int ind_depth);
+void range_4_help(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, double rad, bbox *query, int *found, int *checked, Node2 *n, rule *base, char *partname, int ind_depth);
+double range_wrapper_help(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, double rad, int limit, Node2 *n, rule *base, char *partname, int ind_depth);
 

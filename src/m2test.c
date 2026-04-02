@@ -43,7 +43,7 @@ int main(int argc, char *argv[]){
 	else{
 		sqlite3 *db = setup_db(argv[1]);
 		sqlite3_exec(db, "SELECT UpdateLayerStatistics()",NULL,NULL,NULL);
-		FILE *extra_stream = fdopen(atoi(argv[7]), "w");
+		FILE *extra_stream = fopen("lizard.results","w");
 
 		//gets queries
 		int qnum = 0;
@@ -60,15 +60,16 @@ int main(int argc, char *argv[]){
 		Node2 *n = make_tree_2(p,4096,world,minp,0,&count);
 		partition_help(db,argv[2],argv[3],"q",n,r,"partname",depth);
 		sqlite3_exec(db, "SELECT UpdateLayerStatistics()",NULL,NULL,NULL);
-
-    		clock_gettime(CLOCK_MONOTONIC, &start);
 		for (int i=0;i<qnum;i++){
-			range_wrapper_help(db,argv[2],argv[3],"q",q[i]->x,q[i]->y,q[i]->rad,100000,n,r,"partname",depth);
+
+    			clock_gettime(CLOCK_MONOTONIC, &start);
+			double ret = range_wrapper_help(db,argv[2],argv[3],"q",q[i]->x,q[i]->y,q[i]->rad,100000,n,r,"partname",depth);
+			clock_gettime(CLOCK_MONOTONIC, &end);
+			double elapsed = (end.tv_sec - start.tv_sec) +(end.tv_nsec - start.tv_nsec) / 1e9;
+			fprintf(extra_stream,"%.9f,%.6f\n", elapsed,ret);
+			fflush(extra_stream);
+
 		}
-    		clock_gettime(CLOCK_MONOTONIC, &end);
-    		double elapsed = (end.tv_sec - start.tv_sec) +(end.tv_nsec - start.tv_nsec) / 1e9;
-		fprintf(extra_stream,"%.9f\n", elapsed);
-		fflush(extra_stream);
 		fclose(extra_stream);
 		sqlite3_close(db);
 	}

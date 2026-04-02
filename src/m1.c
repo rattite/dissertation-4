@@ -318,7 +318,7 @@ void beter15(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, d
 
 
 }
-void beter2(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, double rad, int lim, rule *base, int verbose, int ind_depth){
+double beter2(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, double rad, int lim, rule *base, int verbose, int ind_depth){
 	point *p = (point *)malloc(sizeof(point));
 	p->x = x;
 	p->y = y;
@@ -397,7 +397,7 @@ void beter2(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, do
 	range **rtemp = realloc(part_ranges->ranges, r_count*sizeof(range *));
 	part_ranges->ranges = rtemp;
 	part_ranges->len = r_count;
-
+	double total = 0;
 	//we have the ranges now, somehow
 	int found= 0;
 	char sql[256];
@@ -410,6 +410,7 @@ void beter2(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, do
 		sqlite3_bind_int(get_stmt,1,part_ranges->ranges[i]->start);
 		sqlite3_bind_int(get_stmt,2,part_ranges->ranges[i]->end);
 		while (sqlite3_step(get_stmt)==SQLITE_ROW){
+			total++;
 			id = sqlite3_column_int(get_stmt, 0);
 	    		const void *blob = sqlite3_column_blob(get_stmt, 1);
 	    		int blob_size = sqlite3_column_bytes(get_stmt, 1);
@@ -430,7 +431,11 @@ void beter2(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, do
 	//frees memory and such
 	
 	printf("found %d points!%\n", found);
+	if (found == 0 || total == 0){
+		return (double)-1;
+	}
 
+	return (double)found/(double)total;
 	
        		
 

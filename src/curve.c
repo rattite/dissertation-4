@@ -32,6 +32,12 @@ void free_rule(rule *r){
 	}
 }
 
+
+void get_ranges_2(bbox *b, rule *r, int prec, int depth){
+	//so the logic is something like
+	//get the values, then multiply by 4 and add at each level
+}
+
 void free_rangelist(rangelist *r){
 	for (int i = 0; i < r->len;i++){
 		free(r->ranges[i]);

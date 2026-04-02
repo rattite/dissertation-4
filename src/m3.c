@@ -96,18 +96,17 @@ void partition_through_multiple_trees(sqlite3 *db, char *tab, char *col, char *i
     	strcpy (sql, "COMMIT");
     	sqlite3_exec (db, sql, NULL, NULL, NULL);
 }
-void range_4_help_3(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, double rad, bbox *query, int *found, Node2 *n, rule *base, char *partname, int c_count, bbox **clusters, int partno, int ind_depth){
+void range_4_help_3(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, double rad, bbox *query, int *found, int *checked, Node2 *n, rule *base, char *partname, int c_count, bbox **clusters, int partno, int ind_depth){
 	//if we've found too many points
 	if (*found < 0){return;}
 	//if the query area doesn't interesect the node
 	bbox *intersect = get_intersect_help(query,n->boundaries);
 	if (intersect == NULL){return;}
 	if (n->leaf != 1){
+		for (int qwerty=0;qwerty<4;qwerty++){
 		//performs range queries on child nodes
-		range_4_help_3(db,tab,col,ind,x,y,rad,query,found,n->children[0],base,partname,c_count,clusters,partno,ind_depth);
-		range_4_help_3(db,tab,col,ind,x,y,rad,query,found,n->children[1],base,partname,c_count,clusters,partno,ind_depth);
-		range_4_help_3(db,tab,col,ind,x,y,rad,query,found,n->children[2],base,partname,c_count,clusters,partno,ind_depth);
-		range_4_help_3(db,tab,col,ind,x,y,rad,query,found,n->children[3],base,partname,c_count,clusters,partno,ind_depth);
+		range_4_help_3(db,tab,col,ind,x,y,rad,query,found,checked,n->children[qwerty],base,partname,c_count,clusters,partno,ind_depth);
+		}
 
 	}else{
 		if (clusters){
@@ -182,6 +181,7 @@ void range_4_help_3(sqlite3 *db, char *tab, char *col, char *ind, double x, doub
 		if(sqlite3_prepare_v2(db,s3,-1,&sel_stmt,NULL)!=SQLITE_OK){printf("err4:%s\n", sqlite3_errmsg(db));}
 		//selects all points from candidates
 		while (sqlite3_step(sel_stmt) == SQLITE_ROW){
+			(*checked)++;
 	    	const void *blob = sqlite3_column_blob(sel_stmt, 0);
 	    	int blob_size = sqlite3_column_bytes(sel_stmt, 0);
 	    	gaiaGeomCollPtr geom = gaiaFromSpatiaLiteBlobWkb(blob, blob_size);
@@ -203,7 +203,7 @@ void range_4_help_3(sqlite3 *db, char *tab, char *col, char *ind, double x, doub
 }
 
 
-void method_3_wrapper(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, double rad, int limit, Node2 **n, rule *base, char *partname, int c_count, int base_depth, int c_depth){
+double method_3_wrapper(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, double rad, int limit, Node2 **n, rule *base, char *partname, int c_count, int base_depth, int c_depth){
 	//for trees, we expect that index 0 is global, with the other indices being the clusters
 	//does cluster searches, and then does global search
 	bbox *b = malloc(sizeof(bbox));
@@ -213,15 +213,19 @@ void method_3_wrapper(sqlite3 *db, char *tab, char *col, char *ind, double x, do
 	b->max_y = y+rad;
 	bbox **clusters = malloc(c_count*sizeof(bbox *));
 	int found = 0;
+	int checked = 0;
 	for (int i =0;i<c_count;i++){
 		clusters[i] = n[i+1]->boundaries;
-		range_4_help_3(db,tab,col,ind,x,y,rad,b,&found,n[i+1],base,partname,0,NULL,i+1,c_depth);
+		range_4_help_3(db,tab,col,ind,x,y,rad,b,&found,&checked,n[i+1],base,partname,0,NULL,i+1,c_depth);
 	}
-	range_4_help_3(db,tab,col,ind,x,y,rad,b,&found,n[0],base,partname,c_count,clusters,0,base_depth);
+	range_4_help_3(db,tab,col,ind,x,y,rad,b,&found,&checked,n[0],base,partname,c_count,clusters,0,base_depth);
 	printf("found %d points:\n", found);
 	//printf("COMPLETED!\n");
 	free(clusters);
 	free(b);
+	if (found == 0 || checked == 0){
+		return (double)(-1);
+	}
+	return (double)found/(double)checked;
 }
-
 

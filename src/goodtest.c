@@ -76,7 +76,7 @@ int main(int argc, char *argv[]){
 
 	}
 	else{
-		FILE *extra_stream = fdopen(atoi(argv[5]), "w");
+		FILE *extra_stream = fopen("lizard.results","w");
 
 		sqlite3 *db = setup_db(argv[1]);
 		char sql[256];
@@ -87,15 +87,16 @@ int main(int argc, char *argv[]){
 		//gets queries
 		int qnum = 0;
 		query **q = read_queries_from_file(argv[4],&qnum);
-    		clock_gettime(CLOCK_MONOTONIC, &start);
 		for (int i=0;i<qnum;i++){
+    			clock_gettime(CLOCK_MONOTONIC, &start);
 			printf("query: %f %f %f", q[i]->x, q[i]->y, q[i]->rad);
 			make_good_range(db,argv[2],argv[3],q[i]->x,q[i]->y,q[i]->rad,100000,0);
+    			clock_gettime(CLOCK_MONOTONIC, &end);
+    			double elapsed = (end.tv_sec - start.tv_sec) +(end.tv_nsec - start.tv_nsec) / 1e9;
+			fprintf(extra_stream,"%.9f,-1\n", elapsed);
+			fflush(extra_stream);
+
 		}
-    		clock_gettime(CLOCK_MONOTONIC, &end);
-    		double elapsed = (end.tv_sec - start.tv_sec) +(end.tv_nsec - start.tv_nsec) / 1e9;
-		fprintf(extra_stream,"%.9f\n", elapsed);
-		fflush(extra_stream);
 		fclose(extra_stream);
 		really_remove_index(db,argv[2],argv[3]);
 		printf("removed index!\n");
