@@ -361,7 +361,7 @@ void range_4_help(sqlite3 *db, char *tab, char *col, char *ind, double x, double
 					gaiaFreeGeomColl(geom);
 				}
 	} else{
-		rangelist *rl = get_ranges(intersect,base,ind_depth);
+		rangelist *rl = get_ranges_2(intersect,base,ind_depth);
 		for (int tes = 0;tes<rl->len;tes++){
 			//printf("range %d has start %d end %d\n", tes,rl->ranges[tes]->start, rl->ranges[tes]->end);
 		}

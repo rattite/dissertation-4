@@ -26,9 +26,9 @@ double make_range_with_index(sqlite3 *db, char *tab, char *col, char *ind, doubl
 unsigned int make_naive_range(sqlite3 *db, char *tab, char *col, double x, double y, double rad, int lim, int verbose);
 void add_index(sqlite3 *db, char *tab, char *col, rule *base, char *name, int depth);
 point **create_random(int n, bbox *b);
-point **create_gaussian(int n, bbox *b);
+point **create_gaussian(int n, bbox *b, double sigma);
 
-sqlite3 *create_db(char *name);
+sqlite3 *create_db(char *name, point **p, int pnum);
 void add_data_to_db(sqlite3 *db, point **p, char *name, int lim);
 void remove_col(sqlite3 *db, char *tab, char *col);
 rule *get_hilbert_curve();

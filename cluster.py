@@ -51,8 +51,9 @@ def test_clustering(sub):
 
 # ============
     dbscan = cluster.DBSCAN(eps=0.18,min_samples=60)
+    #dbscan = cluster.HDBSCAN(min_cluster_size=67,min_samples=30,cluster_selection_epsilon=0.1,cluster_selection_method="eom",allow_single_cluster=True)
     clustering_algorithms = (
-        ("DBSCAN", dbscan),
+        ("HDBSCAN", dbscan),
     )
 
     for name, algorithm in clustering_algorithms:
@@ -200,9 +201,10 @@ def graph_clusters(points, labels,bboxes, shapefile=None):
     ax.set_axis_off()
 
     colors = np.array(["lightcoral","mediumseagreen", "cornflowerblue", "orchid", "orange", "turquoise", "mediumslateblue", "pink", "#000000"])
-    ax.set_xlim(-480000,-370000)
-    ax.set_ylim(6480000,6590000)
     if shapefile:
+        ax.set_xlim(-480000,-370000)
+        ax.set_ylim(6480000,6590000)
+
         region = gpd.read_file(shapefile)
         region = region.to_crs(epsg=3857)
         #scol = (14/16, 255/256, 14/16)
@@ -215,8 +217,8 @@ def graph_clusters(points, labels,bboxes, shapefile=None):
         rectangle = patches.Rectangle((b[0], b[1]), b[2]-b[0], b[3]-b[1], linewidth=6, edgecolor='sienna', fill=False)
         ax.add_patch(rectangle)
     fig.savefig("img/clus_"+str(int(time.time()))+".png",bbox_inches="tight",dpi=300)
-    plt.close(fig)
     #plt.show()
+    plt.close(fig)
 
 def clustering(filename,shapefile=None):
     data = get_data(filename)
@@ -233,12 +235,13 @@ def clustering(filename,shapefile=None):
     sizes = get_cluster_sizes(sub,labels)
     clusters_to_use = process_clusters(sub, labels,sizes)
     bboxes = compute_bboxes(sub,labels,clusters_to_use)
-    if len(bboxes) > 1:
-        bboxes = merge_clusters(bboxes)
+    #if len(bboxes) > 1:
+     #   bboxes = merge_clusters(bboxes)
     graph_clusters(sub,labels,bboxes,shapefile)
     print("there are: " + str(len(bboxes)))
     a = filename.split(".")[0]
     write_bboxes_to_file(a+".lizard",bboxes)
+    return len(bboxes)
     print("done!\n")
 
 def write_bboxes_to_file(filename,bboxes):

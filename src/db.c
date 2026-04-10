@@ -74,7 +74,7 @@ double make_range_with_index(sqlite3 *db, char *tab, char *col, char *ind, doubl
 
 	//printf("x: %f %f, y: %f %f\n", b->min_x, b->max_x, b->min_y, b->max_y);
 	//start = clock();
-	rangelist *rl = get_ranges(b,base,ind_depth); 
+	rangelist *rl = get_ranges_2(b,base,ind_depth); 
 	free(b);
 	free(world);
 	free(p);
@@ -265,7 +265,7 @@ point **create_random(int n, bbox *b){
 	return p;
 }
 
-point **create_gaussian(int n, bbox *b){
+point **create_gaussian(int n, bbox *b, double sigma){
 	gsl_rng *g;
 	gsl_rng_env_setup();
        	g = gsl_rng_alloc(gsl_rng_default);
@@ -276,8 +276,8 @@ point **create_gaussian(int n, bbox *b){
 		p[i] = (point *)malloc(sizeof(point));
 		int flag = 0;
 		while (flag == 0) {
-    			x = gsl_ran_gaussian(g, 0.2) + 0.5;
-    			y = gsl_ran_gaussian(g, 0.2) + 0.5;
+    			x = gsl_ran_gaussian(g, sigma) + 0.5;
+    			y = gsl_ran_gaussian(g, sigma) + 0.5;
     			if (x > 0 && x < 1 && y > 0 && y < 1) {
 				//Tries again if the points are out of range
 				//Very inefficient, but it works
@@ -289,41 +289,69 @@ point **create_gaussian(int n, bbox *b){
     				}
 			}
 		}
+	printf("p[67] is %f %f\n", p[67]->x, p[67]->y);
+	printf("p[68] is %f %f\n", p[68]->x, p[68]->y);
+
 	return p;
 }
 
 //TODO: add functionality for clustered data, and so forth
 
-sqlite3 *create_db(char *name){
+sqlite3 *create_db(char *name, point **points, int pnum){
 
 	//Creates a new SQLITE database with the given points
 	sqlite3 *db;
-	char sql[256];
-    	void *cache;
+	char meta_sql[256];
     	gaiaGeomCollPtr geo = NULL;
     	unsigned char *blob;
     	int blob_size;
     	int pk;
 	int flag = 0;
+	char fi[64];
+	snprintf(fi,sizeof(fi),"data/%s.sqlite",name);
 
 	
     if (file_exists(name)) {flag = 1;}
 
-
-	sqlite3_open_v2 (name, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
-	cache = spatialite_alloc_connection ();
+	
+	sqlite3_open_v2 (fi, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
+	void *cache = spatialite_alloc_connection();
 	spatialite_init_ex (db, cache, 0);
-	if (flag == 1){
-		return db;
-	    	}
+	if (flag == 1){return db;}
 	 
-	//NOTE: this is critical! if this isn't run, then nothing is going to work
-	strcpy (sql, "SELECT InitSpatialMetadata(1)");
-	sqlite3_exec (db, sql, NULL, NULL, NULL);
-	return db;
+	//creates table
+	char init_sql[256];
+	snprintf(init_sql,sizeof(init_sql),"CREATE TABLE %s (ogc_fid INTEGER PRIMARY KEY AUTOINCREMENT)",name);
+	if(sqlite3_exec(db,init_sql,NULL,NULL,NULL)!=SQLITE_OK){printf("err: %s\n", sqlite3_errmsg(db));}
+	//initialises spatial metadata
+	sqlite3_exec (db, "SELECT InitSpatialMetadata(1)", NULL, NULL, NULL);
+	char add_sql[256];
+    	snprintf(add_sql,sizeof(add_sql),"SELECT AddGeometryColumn(\'%s\', 'cent', 3857, 'POINT', 2)",name);
+    	if(sqlite3_exec(db, add_sql, NULL, NULL, NULL)!=SQLITE_OK){printf("err2: %s\n", sqlite3_errmsg(db));}
+	//copies each point in
+	if(sqlite3_exec(db,"BEGIN",NULL,NULL,NULL)!=SQLITE_OK){printf("err3: %s\n", sqlite3_errmsg(db));}
 
-	    //strcpy(sql, "CREATE TABLE 'bbox' (FOREIGN KEY name REFERENCES geometry_columns(f_table_name), DOUBLE min_x, DOUBLE min_y, DOUBLE max_x, DOUBLE max_y)");
-	    //sqlite3_exec(db,sql,NULL,NULL,NULL);
+	char ins_sql[256];
+	snprintf(ins_sql,sizeof(ins_sql),"INSERT INTO %s (cent) VALUES (MakePoint(?,?,3857))",name);
+	sqlite3_stmt *ins_stmt;
+	if(sqlite3_prepare_v2(db,ins_sql,-1,&ins_stmt,NULL)!=SQLITE_OK){printf("err4: %s\n", sqlite3_errmsg(db));}
+	for (int i=0;i<pnum;i++){
+		sqlite3_bind_double(ins_stmt,1,points[i]->x);
+		sqlite3_bind_double(ins_stmt,2,points[i]->y);
+		sqlite3_step(ins_stmt);
+		sqlite3_reset(ins_stmt);
+
+		free(points[i]);
+
+
+	}
+	sqlite3_finalize(ins_stmt);
+	if(sqlite3_exec(db,"COMMIT",NULL,NULL,NULL)!=SQLITE_OK){printf("err3: %s\n", sqlite3_errmsg(db));}
+	sqlite3_exec(db,"SELECT UpdateLayerStatistics()",NULL,NULL,NULL);
+	free(points);
+	printf("CREATED!\n");
+	sqlite3_close(db);
+
 
 }
 

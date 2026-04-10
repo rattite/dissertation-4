@@ -6,6 +6,7 @@ import time
 import graph_cases
 import json
 import matplotlib.pyplot as plt
+from pathlib import Path
 import sys
 import matplotlib.gridspec as gridspec
 ##todo: fix m1 bug somehow
@@ -42,6 +43,7 @@ class query:
         for line in f.readlines():
             a = line.split(",")
             queries.append(query(float(a[0]),float(a[1]),float(a[2])))
+        f.close()
         return queries
 
     @classmethod
@@ -70,11 +72,15 @@ class bbox:
 
 
 class test_case(BaseEstimator):
+    cases = []
 
     def __init__(self):
         self.times = []
         self.hit = []
         pass
+
+    def gpl(self):
+        return ""
 
     def mean_time(self):
         if len(self.times) == 0:
@@ -86,7 +92,7 @@ class test_case(BaseEstimator):
         return {}
     def fit(self, X=None, y=None):
         runs = []
-        for _ in range(2):
+        for _ in range(4):
             self.run(**X)
             runs.append(self.times[-1])
 
@@ -100,6 +106,7 @@ class test_case(BaseEstimator):
     def optimise(cls, X):
         best_time = float('inf')
         best_case = None
+        r = []
         
         for params in ParameterGrid(cls.get_param_grid()):
             # create object with current parameters
@@ -108,12 +115,14 @@ class test_case(BaseEstimator):
             obj.times = []
             obj.fit(X) 
             mean_time = obj.avg_time_
+            r.append(obj)
             
             if mean_time < best_time:
                 best_time = mean_time
                 best_case = obj
+        print(len(r))
         
-        return best_case
+        return (best_case, r)
     def subp(self,filename:str, tab:str, col:str, queries_file:str):
         pass
 
@@ -159,6 +168,7 @@ class test_case(BaseEstimator):
                 hits.append(10**(-3))
         self.times.append(time/tc)
         self.hit.append(geometric_mean(hits))
+        f.close()
 
 
 
@@ -184,64 +194,75 @@ class naive_case(test_case):
         return subprocess.Popen(["bin/naivetest",filename,tab,col,queries_file])
 
 class index_case(test_case):
-    def __init__(self, ind_depth=4):
+    def __init__(self, ind_depth=4,curve=0):
         super().__init__()
         self.ind_depth = str(ind_depth)
-        self.label = "Hilbert"
+        self.curve = str(curve)
+        self.label = "SFC"
+
+    def gpl(self):
+        return "d="+self.ind_depth+self.curve
     @classmethod
     def get_param_grid(cls):
-        return {"ind_depth": [4,6]}
+        return {"ind_depth": [4,6,8,10], "curve":[0,1]}
     def subp(self,filename:str, tab:str, col:str, queries_file:str):
-        return subprocess.Popen(["bin/indextest",filename,tab,col,queries_file,str(self.ind_depth)])
+        return subprocess.Popen(["bin/indextest",filename,tab,col,queries_file,self.ind_depth, self.curve])
 
 class m1_case(test_case):
     def __init__(self,ind_depth=6,pnum=16):
         super().__init__()
-        self.ind_depth = ind_depth
-        self.pnum = pnum
+        self.ind_depth = str(ind_depth)
+        self.pnum = str(pnum)
         self.label = "Index-Ranges"
     @classmethod
     def get_param_grid(cls):
-        return {"ind_depth": [4,6], "pnum": [16,32,64]}
+        return {"ind_depth": [4,6,8,10], "pnum": [16,32,64]}
+
+    def gpl(self):
+        return "d="+self.ind_depth+"\n, p="+self.pnum
 
     def subp(self,filename:str, tab:str, col:str, queries_file:str):
         print("ready to go")
-        subprocess.run(["bin/m1test",filename,tab,col,queries_file,str(self.ind_depth),str(self.pnum),str(1)])
+        subprocess.run(["bin/m1test",filename,tab,col,queries_file,self.ind_depth,self.pnum,str(1)])
         print("ran first process")
-        return subprocess.Popen(["bin/m1test",filename,tab,col,queries_file,str(self.ind_depth),str(self.pnum),str(0)])
+        return subprocess.Popen(["bin/m1test",filename,tab,col,queries_file,self.ind_depth,self.pnum,str(0)])
 
 class m2_case(test_case):
     def __init__(self,ind_depth=6,min_leaf=256):
         super().__init__()
-        self.ind_depth = ind_depth
-        self.min_leaf = min_leaf
+        self.ind_depth = str(ind_depth)
+        self.min_leaf = str(min_leaf)
         self.label = "Grid"
     @classmethod
     def get_param_grid(cls):
-        return {"ind_depth": [4,6], "min_leaf": [128,256]}
+        return {"ind_depth": [4,6], "min_leaf": [64,256]}
     def subp(self,filename:str, tab:str, col:str, queries_file:str):
-        return subprocess.Popen(["bin/m2test",filename,tab,col,queries_file,str(self.ind_depth),str(self.min_leaf)])
+        return subprocess.Popen(["bin/m2test",filename,tab,col,queries_file,self.ind_depth,self.min_leaf])
+
+    def gpl(self):
+        return "d="+self.ind_depth+"\n, min="+self.min_leaf
 
 class m3_case(test_case):
     def __init__(self,b_min=256,c_min=128,b_dep=4,c_dep=4):
         super().__init__()
-        self.b_min = b_min
-        self.b_dep = b_dep
-        self.c_min = c_min
-        self.c_dep = b_dep
+        self.b_min = str(b_min)
+        self.b_dep = str(b_dep)
+        self.c_min = str(c_min)
+        self.c_dep = str(b_dep)
         self.label = "Grid+Clustering"
     @classmethod
     def get_param_grid(cls):
-        return {"b_min": [64,128,256], "c_min": [64,128,256],"b_dep":[4],"c_dep":[4]}
+        return {"b_min": [64,128,256], "c_min": [64,128,256],"b_dep":[4,6],"c_dep":[4,6]}
     def subp(self,filename:str, tab:str, col:str, queries_file:str,clus:str):
-        return subprocess.Popen(["bin/m3test",filename,tab,col,queries_file,clus,str(self.b_min),str(self.b_dep),str(self.c_min),str(self.c_dep)])
+        return subprocess.Popen(["bin/m3test",filename,tab,col,queries_file,clus,self.b_min,self.b_dep,self.c_min,self.c_dep])
     def run(self,filename:str, tab:str, col:str, queries_file:str,clus:str):
         p1 = subprocess.run(["bin/reset",filename,tab])
         process = self.subp(filename,tab,col,queries_file,clus)
         process.wait()
         self.set_results()
         time.sleep(0.5)
-
+    def gpl(self):
+        return "b_dep="+self.b_dep+"\nb_min="+self.b_min+"\nc_dep="+self.c_dep+"\nc_min="+self.c_min
 
 #
 #
@@ -263,14 +284,23 @@ def select_best_from_list(cases:list[test_case]):
             best[i.label] = i
     return best
 
-def graph_final_results(cases:list[test_case],flag):
+
+def graph_heatmap_alt(cases:list[test_case], flag=0, flag2=0):
+    #homogeneous heatmap for when that sort of thing is required
+    pass
+
+
+def graph_final_results(cases:list[test_case],name="",flag=0,flag2=0):
+    print(len(cases))
     fig,ax = plt.subplots(figsize=(10,10))
     xlabs = []
     y = []
-    best = select_best_from_list(cases)
-    for case in best.values():
+    for case in cases:
         y.append(case.times)
-        xlabs.append(case.label)
+        if flag == 1:
+            xlabs.append(case.label)
+        else:
+            xlabs.append(case.gpl())
     bp = ax.boxplot(y,patch_artist=True,tick_labels=xlabs,showfliers=False)
     for patch in bp['boxes']:
         patch.set_facecolor('mediumseagreen')
@@ -279,32 +309,29 @@ def graph_final_results(cases:list[test_case],flag):
             median.set_linewidth(2)
 
     #adds labels, title, etc to graph
-    ax.set_yscale('log',base=10)
-    ax.set_ylabel("log(time)",fontsize=16)
-    ax.tick_params(axis='both', labelsize=20)    
-    if flag == 0:
-        ax.set_title("Times taken to execute a set of queries on the whole dataset",fontsize=20)
+    if flag == 1:
+        ax.set_yscale('log',base=10)
+        ax.set_ylabel("log(time)",fontsize=16)
     else:
-        ax.set_title("Times taken to execute a set of queries on the clusters",fontsize=20)
+        ax.set_ylabel("time", fontsize=16)
+    ax.tick_params(axis='both', labelsize=20)    
     ax.grid(axis='y', linestyle='-', alpha=0.5)
 
-    fig.savefig("img/res"+str(int(time.time()))+".png",bbox_inches="tight",dpi=300)
+    fig.savefig("img/"+name+"/"+cases[0].label+"res"+str(int(time.time()))+str(random.randint(1,9001))+"_"+str(flag)+".png",bbox_inches="tight",dpi=300)
     plt.close(fig)
 
 
-
-
-
-
-
     fig,ax = plt.subplots(figsize=(10,10))
     xlabs = []
     y = []
-    best = select_best_from_list(cases)
-    for case in best.values():
+    for case in cases:
         if case.label != "R* Tree":
             y.append(case.hit)
-            xlabs.append(case.label)
+            if flag == 1:
+                xlabs.append(case.label)
+            else:
+                xlabs.append(case.gpl())
+
     bp = ax.boxplot(y,patch_artist=True,tick_labels=xlabs,showfliers=False)
     for patch in bp['boxes']:
         patch.set_facecolor('mediumseagreen')
@@ -313,16 +340,15 @@ def graph_final_results(cases:list[test_case],flag):
             median.set_linewidth(2)
 
     #adds labels, title, etc to graph
-    ax.set_yscale('log',base=10)
-    ax.set_ylabel("log(HIT!)",fontsize=16)
-    ax.tick_params(axis='both', labelsize=20)    
-    if flag == 0:
-        ax.set_title("HIT! for a set of queries on the whole dataset",fontsize=20)
+    if flag == 1:
+        ax.set_yscale('log',base=10)
+        ax.set_ylabel("log(HIT!)",fontsize=16)
     else:
-        ax.set_title("HIT! for set of queries on the clusters",fontsize=20)
+        ax.set_ylabel("HIT!", fontsize=16)
+    ax.tick_params(axis='both', labelsize=20)    
     ax.grid(axis='y', linestyle='-', alpha=0.5)
 
-    fig.savefig("img/HIT"+str(int(time.time()))+".png",bbox_inches="tight",dpi=300)
+    fig.savefig("img/"+name+"/"+cases[0].label+"HIT"+str(int(time.time()))+str(random.randint(1,9001))+"_"+str(flag2)+".png",bbox_inches="tight",dpi=300)
     plt.close(fig)
 
 
@@ -401,34 +427,77 @@ def write_out_queries(filename:str, queries: list[query]):
 
 def rt(name,flag,reps):
     qname = "data/"+name
-    cluster.clustering(qname+".dat")
+    c = cluster.clustering(qname+".dat")
+    f2 = False
+    if c > 0:
+        f2 = True
     if flag == 0:
-        query.generate_query_set(qname+".sqlite",name,"cent",10,32,32,4096,qname+".queries")
+        query.generate_query_set(qname+".sqlite",name,"cent",100,32,32,4096,qname+".queries")
     else:
-        query.generate_clus_query_set(qname+".sqlite",name,"cent",10,qname+".lizard",qname+".queries")
+        query.generate_clus_query_set(qname+".sqlite",name,"cent",100,qname+".lizard",qname+".queries")
 
     
     X = {"filename": qname + ".sqlite","tab": name,"col": "cent","queries_file": qname + ".queries"}
     X1 = {"filename": qname + ".sqlite","tab": name,"col": "cent","queries_file": qname + ".queries", "clus": qname+".lizard"}
 
+    pat = Path("data/"+name)
+    pat2 = Path("img/"+name)
+    try:
+        pat.mkdir(parents=True, exist_ok=True)        
+    except FileExistsError:
+        print("this is bad")
+    try:
+        pat2.mkdir(parents=True, exist_ok=True)        
+    except FileExistsError:
+        print("this is bad")
+
     cases = []
-    #cases.append(naive_case.optimise(X))
-    cases.append(good_case.optimise(X))
-    cases.append(m1_case.optimise(X))
-    cases.append(m2_case.optimise(X))
-    #m3c = m3_case.optimise(X1)
+    cases.append(naive_case.optimise(X)[0])
+    cases.append(good_case.optimise(X)[0])
+
+    besti, alli = index_case.optimise(X)
+    cases.append(besti)
+    test_case.serialise_list("data/"+name+"/"+str(time.time())+"_"+str(flag)+".allind", alli)
+    graph_final_results(alli,name,0,flag)
+
+    best1, all1 = m1_case.optimise(X)
+    cases.append(best1)
+    test_case.serialise_list("data/"+name+"/"+str(time.time())+"_"+str(flag)+".all1", all1)
+    graph_final_results(all1,name,0,flag)
+
+    best2, all2 = m2_case.optimise(X)
+    cases.append(best2)
+    test_case.serialise_list("data/"+name+"/"+str(time.time())+"_"+str(flag)+".all2", all2)
+    graph_final_results(all2,name,0,flag)
+    if f2 == True:
+        best3, all3 = m3_case.optimise(X1)
+        test_case.serialise_list("data/"+name+"/"+str(time.time())+"_"+str(flag)+".all3", all3)
+        graph_final_results(all3,name,0,flag)
+        for i in range(reps):
+             best3.run(qname+".sqlite",name,"cent",qname+".queries",qname+".lizard")
+
     for case in cases:
         for i in range(reps):
             case.run(qname+".sqlite",name,"cent",qname+".queries")
-    #for i in range(reps):
-     #   m3c.run(qname+".sqlite",name,"cent",qname+".queries",qname+".lizard")
-    #cases.append(m3c)
-    test_case.serialise_list("data/"+name+".cases",cases)
 
-    graph_final_results(cases,flag)
+    if f2 == True:
+        cases.append(best3)
 
-#rt(sys.argv[1],0,int(sys.argv[2]))
-#time.sleep(5)
-rt(sys.argv[1],0,int(sys.argv[2]))
+    test_case.serialise_list("data/"+name+"/"+str(time.time())+"_"+str(flag)+".best",cases)
 
+
+    graph_final_results(cases,name,1,flag)
+
+
+if __name__ == "__main__":
+    rt(sys.argv[1],0,int(sys.argv[2]))
+    time.sleep(5)
+    rt(sys.argv[1],1,int(sys.argv[2]))
+    time.sleep(5)
+
+    #sends a desktop notification so i can see when the script finishes
+    try:
+        subprocess.run(["notify-send", "-u", "critical", "ACTION REQUIRED: GRADUATION", "COMPLETED!"], check=True)
+    except FileNotFoundError:
+        print("you need to get libnotify! to receive notifications")
 

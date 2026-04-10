@@ -12,7 +12,7 @@ int main(int argc, char *argv[]){
 	//1,2,3: filename, table, col
 	//4:query file
 	//5: depth
-	struct timespec start, end;
+	struct timespec start, end
 	rule *r = get_hilbert_curve();
 
 	if (argc == 1){
@@ -38,6 +38,10 @@ int main(int argc, char *argv[]){
 		//gets queries
 		int qnum = 0;
 		int depth = atoi(argv[5]);
+		int curve = atoi(argv[6]);
+		if (curve == 1){
+			r = get_zorder_curve();
+		}
 		if (depth == 0){printf("wrong!\n");}
 		query **q = read_queries_from_file(argv[4],&qnum);
 		add_index(db,argv[2],argv[3],r,"test",depth);

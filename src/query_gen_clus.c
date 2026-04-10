@@ -43,7 +43,7 @@ int main(int argc, char *argv[]){
 		bbox_get_lengths(clus[i],&xlen,&ylen);
 		float size = sqrt(xlen*ylen/8);
 
-		for (int j=0;j<no;j++){
+		for (int j=0;j<no/bnum;j++){
 			f = ((float)rand())/RAND_MAX;
 			float q_x = (clus[i]->min_x + (0.1*xlen)+(0.8*f*xlen));
 			f = ((float)rand())/RAND_MAX;

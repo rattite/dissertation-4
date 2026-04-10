@@ -15,6 +15,13 @@ typedef struct{
 }bbox;
 
 typedef struct{
+	unsigned int min_x;
+	unsigned int min_y;
+	unsigned int max_x;
+	unsigned int max_y;
+}intbbox;
+
+typedef struct{
 	double x;
 	double y;
 }point;
@@ -41,6 +48,17 @@ typedef struct rangelist{
 	int len;
 }rangelist;
 
+void print_ibb(intbbox *a);
+int ibis(intbbox *a, intbbox *b);
+void gr(intbbox *query, intbbox *curr, rule *r, int prec, int depth, rangelist *rl, unsigned int start, int tolerance);
+intbbox *unit_to_int(bbox *b, int prec);
+intbbox *create_large(int prec);
+rangelist *get_ranges_2(bbox *b, rule *r, int prec);
+
+
+
+
+bbox *gen_bbox(double min_x, double min_y, double max_x, double max_y);
 void bbox_get_lengths(bbox *b, double *x, double *y);
 void free_rule(rule *r);
 void free_rangelist(rangelist *r);

@@ -8,6 +8,14 @@
 //Secondary goals:
 //1. Dynamically calculate required index length for a certain precision
 
+bbox *gen_bbox(double min_x, double min_y, double max_x, double max_y){
+	bbox *b = malloc(sizeof(bbox));
+	b->min_x = min_x;
+	b->min_y = min_y;
+	b->max_x = max_x;
+	b->max_y = max_y;
+	return b;
+}
 void bbox_get_lengths(bbox *b, double *x, double *y){
 	*x = b->max_x-b->min_x;
 	*y = b->max_y-b->min_y;
@@ -32,10 +40,135 @@ void free_rule(rule *r){
 	}
 }
 
+void print_ibb(intbbox *a){
+	printf("ib is x: %d %d y: %d %d\n", a->min_x, a->max_x, a->min_y, a->max_y);
+}
+int ibis(intbbox *a, intbbox *b){
+	/* i like ibis
+                                 .....
+                            .e$$$$$$$$$$$$$$e.
+                          z$$ ^$$$$$$$$$$$$$$$$$.
+                        .$$$* J$$$$$$$$$$$$$$$$$$$e
+                       .$"  .$$$$$$$$$$$$$$$$$$$$$$-
+                      .$  $$$$$$$$$$$$$$$$***$$  .ee"
+         z**$$        $$r ^**$$$$$$$$$*" .e$$$$$$*"
+        " -\e$$      4$$$$.         .ze$$$""""
+       4 z$$$$$      $$$$$$$$$$$$$$$$$$$$"
+       $$$$$$$$     .$$$$$$$$$$$**$$$$*"
+     z$$"    $$     $$$$P*""     J$*$$c
+    $$"      $$F   .$$$          $$ ^$$
+   $$        *$$c.z$$$          $$   $$
+  $P          $$$$$$$          4$F   4$
+ dP            *$$$"           $$    '$r
+.$                            J$"     $"
+$                             $P     4$
+F                            $$      4$
+                            4$%      4$
+                            $$       4$
+                           d$"       $$
+                           $P        $$
+                          $$         $$
+                         4$%         $$
+                         $$          $$
+                        d$           $$
+                        $F           "3
+                 r=4e="  ...  ..rf   .  ""% Gilo94'
+                $**$*"^""=..^4*=4=^""  ^"""
+------------------------------------------------
+*/
 
-void get_ranges_2(bbox *b, rule *r, int prec, int depth){
-	//so the logic is something like
-	//get the values, then multiply by 4 and add at each level
+	//we have 3 different cases:
+	//b completely within a (including touching edges) - returns 0
+	//a intersects b (excluding touching edges) - returns 1
+	//a and b have no relation - returns -1
+	//
+	if (a->min_x <= b->min_x && a->min_y <= b->min_y && a->max_x >= b->max_x && a->max_y >= b->max_y){
+		return 0;
+	}
+
+	if (a->max_x <= b->min_x || a->max_y <= b->min_y || a->min_x >= b->max_x || a->min_y >= b->max_y){
+		return -1;
+	}
+	return 1;
+}
+void gr(intbbox *query, intbbox *curr, rule *r, int prec, int depth, rangelist *rl, unsigned int start, int tolerance){
+	int ib = ibis(query,curr);
+	//print_ibb(query);
+	//print_ibb(curr);
+	//printf("start is %d, depth is %d, ibis case is %d\n", start, depth,ib);
+	if (ib == -1){ //if there is no intersect at all!
+		return;
+	}
+
+	if (ib == 0 || depth==prec){//if we're fully within the query area
+		int end = start+(1<<(2*(prec-depth)))-1;
+		if (rl->len > 0 && rl->ranges[rl->len-1]->end + tolerance >= start){
+			rl->ranges[rl->len-1]->end = end;
+		} else {
+		range *r = malloc(sizeof(range));
+		r->start = start;
+		r->end = end;
+		rl->ranges[rl->len]=r;
+		rl->len++;
+		}
+		return;
+	}
+
+	//now we have to traverse all 4 subtrees
+	//gets next bboxes, somehow
+	intbbox quadrants[4];
+	//eg: (1,5)(3,8) divides into bl(1525),tl(1628)
+	unsigned int xmid = (curr->min_x+curr->max_x)/2;
+	unsigned int ymid = (curr->min_y+curr->max_y)/2;
+	quadrants[0] = (intbbox){curr->min_x, ymid+1,xmid,curr->max_y};
+	quadrants[1] = (intbbox){curr->min_x,curr->min_y,xmid,ymid};
+	quadrants[2] = (intbbox){xmid+1,ymid+1,curr->max_x,curr->max_y};
+	quadrants[3] = (intbbox){xmid+1,curr->min_y,curr->max_x,ymid};
+	for (int i=0;i<4;i++){
+		unsigned int k = r->trav[i];
+		//we want to check the quadrants in traversal order
+		gr(query,&quadrants[k], r->next[k], prec, depth+1, rl, start+i*(1<<(2*(prec-depth)-1)-1),tolerance);
+	}
+	return;
+}	
+
+intbbox *unit_to_int(bbox *b, int prec){
+	intbbox *i = malloc(sizeof(intbbox));
+	i->min_x = (unsigned int)(b->min_x*pow(4,prec));
+	i->min_y = (unsigned int)(b->min_y*pow(4,prec));
+	i->max_x = (unsigned int)(b->max_x*pow(4,prec));
+	i->max_y = (unsigned int)(b->max_y*pow(4,prec));
+	return i;
+}
+
+intbbox *create_large(int prec){
+	intbbox *i = malloc(sizeof(intbbox));
+	i->min_x = 0;
+	i->min_y = 0;
+	i->max_x = pow(4,prec)-1;
+	i->max_y = pow(4,prec)-1;
+	return i;
+}
+
+rangelist *get_ranges_2(bbox *b, rule *r, int prec){
+	rangelist *rl = malloc(sizeof(rangelist));
+	rl->ranges = malloc(1000*sizeof(range *)); //we will realloc this later!!!!
+	rl->len = 0;
+	intbbox *q = unit_to_int(b,prec);
+	//printf("%d %d %d %d\n", q->min_x, q->min_y, q->max_x, q->max_y);
+	intbbox *world = create_large(prec);
+	//printf("%d %d\n", world->min_x, world->max_x);
+	//now we call the gr function
+	gr(q,world,r,prec,0,rl,0,pow(2,prec-1)); //this is recursive, so we need only call it once
+	//HOPEFULLY it should come out sorted
+	//
+	//for (int i=0;i<rl->len;i++){
+	//	printf("range is %d %d\n", rl->ranges[i]->start, rl->ranges[i]->end);
+	//}
+	free(q);
+	free(world);
+	return rl;
+
 }
 
 void free_rangelist(rangelist *r){
@@ -143,7 +276,7 @@ rangelist *get_ranges(bbox *b, rule *base, int prec){
 		}
 	}
 	free(p);
-	rangelist *ranges = collect(q, dim,pow(2,prec));
+	rangelist *ranges = collect(q, dim,pow(2,prec-1));
 	free(q);
 	return ranges;
 

@@ -33,7 +33,8 @@ int main(int argc, char *argv[]){
 			unsigned int found = make_naive_range(db,argv[2],argv[3],q[i]->x,q[i]->y,q[i]->rad,100000,0);
 			clock_gettime(CLOCK_MONOTONIC, &end);
 			double elapsed = (end.tv_sec - start.tv_sec) +(end.tv_nsec - start.tv_nsec) / 1e9;
-			fprintf(extra_stream,"%.9f,%.6f", elapsed,(double)found/(double)tabsize);
+			double rt = (double)found/(double)tabsize;
+			fprintf(extra_stream,"%.9f,%.6f\n", elapsed,rt);
 			fflush(extra_stream);
 
 		}

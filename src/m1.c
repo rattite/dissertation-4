@@ -461,7 +461,7 @@ void beter(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, dou
 	normalise_bbox(b, world);
 	print_bbox(b);
 
-	rangelist *rl = get_ranges(b,base,ind_depth); 
+	rangelist *rl = get_ranges_2(b,base,ind_depth); 
 	//TODO: better range approximation
 	//printf("%d %d\n", rl->ranges[0]->start, rl->ranges[0]->end);
 

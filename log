@@ -1,0 +1,91 @@
+13/1: initial project meeting, began work on database code
+14/1: database code
+15/1: database code
+16/1: SFC code (get index, unindex, etc)
+17/1: database code, initial tests
+18/1: rest
+19/1: rest
+20/1: SFC code (get_ranges, collect, etc)
+21/1: SFC code (count_discontinuities, etc)
+22/1: database code (indexed range queries)
+23/1: database code (indexed range queries)
+24/1: ill
+25/1: ill
+26/1: investigation into optimisation
+27/1: meeting. rewrite of database code, investigation into optimisation
+28/1: rewrite of database code
+29/1: rewrite of database code, gaussian and random data tests
+30/1: rest
+31/1: rest
+1/2: research into clustering algorithms
+2/2: writing up results for meeting
+3/2: meeting. focus of this week is partitioning; try to have a partitioning system in place by next week!
+4/2: research into clustering algorithms, implementation of range-based partitioning
+5/2: more clustering work. dbscan seems like the bast
+6/2: kmeans implementation
+7/2: silhouette score, davies-boulding score. clustering sux
+8/2: dbscan python
+9/2: implementing queries with ranges partitioning
+10/2: meeting. focus is partitioning again! make sure to have a working system by next week
+11/2: implementing stratified sampling grid
+12/2: implementing partitioning with strat sampling grid
+13/2: away. you know, it's strange that it's only been a month since then...
+14/2: busy
+15/2: implementing range queries with strat sampling grid
+16/2: testing, code refactoring
+17/2: implementing range queries with method 3
+18/2: testing 
+19/2: meeting! main points are:
+-write tests, using both real-world data and random/simulated data
+-hyperparameter tuning
+-produce graphs for report
+-main content of dissertation is complete!
+-write functions for serialisation and tearing down partitionings
+-todo: hopefully be done with report by poster deadline
+-fix partitioning in method 3 so that partitions with no points don't get added
+
+20/2: implementing testing
+21/2: implementing testing
+22/2: implementing testing
+23/2: implementing test endpoints
+24/2: final results graphing
+25/2: rest
+26/2: meeting! main points are:
+-poster discussion
+-demonstration of testing and graphing
+-
+27/2: none
+28/2: producing graphs for poster
+1/3: fixing method 1 bug
+2/3: fixing curve bug
+3/3: producing graphs for poster
+4/3: producing graphs for poster
+5/3: meeting! poster draft presented
+-fix graphs, fix m1 bug
+-add more detail about your methodology
+6/3: none
+7/3: making graphs
+8/3: making graphs
+9/3: formatting poster
+10/3: making graphs
+11/3: poster finalised
+12/3: mass data downloading
+13/3: meeting - more data collection required!
+-work on random and gaussian data for report
+-test on very large datasets
+-talk about the parameters for each method on the poster
+14/3: ill
+15/3: ill
+16/3: ill
+17/3: making clustering graphs
+18/3: ill
+19/3: ill
+20/3: meeting! report discussion + miniature demo
+-talk more about how you're doing clustering
+21/3: doing cryptgraphy coursework
+22/3: writing lit review for report
+23/3: writing new testing framework
+24/3: writing new testing framework, adding more advanced query generation
+25/3: data collecting (i've started running tests overnight to get the data in the morning)
+26/3: none
+27/3: none

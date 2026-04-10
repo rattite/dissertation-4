@@ -147,7 +147,7 @@ void range_4_help_3(sqlite3 *db, char *tab, char *col, char *ind, double x, doub
 					gaiaFreeGeomColl(geom);
 				}
 	} else{
-		rangelist *rl = get_ranges(intersect,base,ind_depth);
+		rangelist *rl = get_ranges_2(intersect,base,ind_depth);
 		//printf("range 0: %d %d", rl->ranges[0]->start, rl->ranges[0]->end);
 		//creates temporary table
 		sqlite3_stmt *stmt_x;

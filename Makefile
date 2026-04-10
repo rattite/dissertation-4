@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -g -MMD -Isrc
+CFLAGS = -g -MMD -Isrc -O3
 LIBS = -lm -lsqlite3 -lspatialite -lgeos_c -lgsl -lgslcblas
 
 # Directory Definitions
@@ -11,7 +11,7 @@ DATA_DIR = data
 OBJS = $(addprefix $(BIN_DIR)/, curve.o db.o grid.o m1.o m2.o m3.o test_helper.o)
 
 # Targets
-TEST_BINS = naivetest indextest m1test m2test m3test reset draw_bboxes draw_3 curvetest query_gen goodtest query_gen_clus
+TEST_BINS = naivetest indextest m1test m2test m3test reset draw_bboxes draw_3 curvetest query_gen goodtest query_gen_clus make_ug curvetest2
 DATA_BINS = process getpoints clean_db
 
 # Final paths for targets

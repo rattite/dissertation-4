@@ -73,12 +73,12 @@ int main(int argc, char *argv[]){
 		//gets queries
 		int qnum = 0;
 		query **q = read_queries_from_file(argv[4],&qnum);
-
+		double ret;
 		if (atoi(argv[7])==1){
 			add_index(db,argv[2],argv[3],base,"test",depth);
 			int count = 0;
-			unsigned int *indx = get_all_indices(db,argv[2],"test",depth,4,0,&count);
-			rangelist *r = make_partitions_by_population(indx, rangeno, count,depth,4); 
+			unsigned int *indx = get_all_indices(db,argv[2],"test",depth,1,4096,&count);
+			rangelist *r = make_partitions_by_population(indx, rangeno, count,depth,1); 
 			partition_col_by_index_ranges(db,argv[2],argv[3],"test",r,base,depth);
 			
 			beter2(db, argv[2], argv[3], "test", q[0]->x, q[0]->y, q[0]->rad, 100000, base, 0,depth);
@@ -88,7 +88,7 @@ int main(int argc, char *argv[]){
 
 			for (int i=0;i<qnum;i++){
 				clock_gettime(CLOCK_MONOTONIC, &start);
-				double ret = beter2(db, argv[2], argv[3], "test", q[i]->x, q[i]->y, q[i]->rad, 100000, base, 0,depth);
+				ret = beter2(db, argv[2], argv[3], "test", q[i]->x, q[i]->y, q[i]->rad, 100000, base, 0,depth);
 				clock_gettime(CLOCK_MONOTONIC, &end);
 				double elapsed = (end.tv_sec - start.tv_sec) +(end.tv_nsec - start.tv_nsec) / 1e9;
 				fprintf(extra_stream,"%.9f,%.6f\n", elapsed,ret);
