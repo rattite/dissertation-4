@@ -12,7 +12,7 @@ int main(int argc, char *argv[]){
 	//1,2,3: filename, table, col
 	//4:query file
 	//5: depth
-	struct timespec start, end
+	struct timespec start, end;
 	rule *r = get_hilbert_curve();
 
 	if (argc == 1){

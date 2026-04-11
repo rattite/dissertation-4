@@ -297,7 +297,7 @@ point **create_gaussian(int n, bbox *b, double sigma){
 
 //TODO: add functionality for clustered data, and so forth
 
-sqlite3 *create_db(char *name, point **points, int pnum){
+sqlite3 *create_db(char *name, char *tabname, point **points, int pnum){
 
 	//Creates a new SQLITE database with the given points
 	sqlite3 *db;
@@ -321,18 +321,18 @@ sqlite3 *create_db(char *name, point **points, int pnum){
 	 
 	//creates table
 	char init_sql[256];
-	snprintf(init_sql,sizeof(init_sql),"CREATE TABLE %s (ogc_fid INTEGER PRIMARY KEY AUTOINCREMENT)",name);
+	snprintf(init_sql,sizeof(init_sql),"CREATE TABLE %s (ogc_fid INTEGER PRIMARY KEY AUTOINCREMENT)",tabname);
 	if(sqlite3_exec(db,init_sql,NULL,NULL,NULL)!=SQLITE_OK){printf("err: %s\n", sqlite3_errmsg(db));}
 	//initialises spatial metadata
 	sqlite3_exec (db, "SELECT InitSpatialMetadata(1)", NULL, NULL, NULL);
 	char add_sql[256];
-    	snprintf(add_sql,sizeof(add_sql),"SELECT AddGeometryColumn(\'%s\', 'cent', 3857, 'POINT', 2)",name);
+    	snprintf(add_sql,sizeof(add_sql),"SELECT AddGeometryColumn(\'%s\', 'cent', 3857, 'POINT', 2)",tabname);
     	if(sqlite3_exec(db, add_sql, NULL, NULL, NULL)!=SQLITE_OK){printf("err2: %s\n", sqlite3_errmsg(db));}
 	//copies each point in
 	if(sqlite3_exec(db,"BEGIN",NULL,NULL,NULL)!=SQLITE_OK){printf("err3: %s\n", sqlite3_errmsg(db));}
 
 	char ins_sql[256];
-	snprintf(ins_sql,sizeof(ins_sql),"INSERT INTO %s (cent) VALUES (MakePoint(?,?,3857))",name);
+	snprintf(ins_sql,sizeof(ins_sql),"INSERT INTO %s (cent) VALUES (MakePoint(?,?,3857))",tabname);
 	sqlite3_stmt *ins_stmt;
 	if(sqlite3_prepare_v2(db,ins_sql,-1,&ins_stmt,NULL)!=SQLITE_OK){printf("err4: %s\n", sqlite3_errmsg(db));}
 	for (int i=0;i<pnum;i++){
@@ -341,14 +341,11 @@ sqlite3 *create_db(char *name, point **points, int pnum){
 		sqlite3_step(ins_stmt);
 		sqlite3_reset(ins_stmt);
 
-		free(points[i]);
-
 
 	}
 	sqlite3_finalize(ins_stmt);
 	if(sqlite3_exec(db,"COMMIT",NULL,NULL,NULL)!=SQLITE_OK){printf("err3: %s\n", sqlite3_errmsg(db));}
 	sqlite3_exec(db,"SELECT UpdateLayerStatistics()",NULL,NULL,NULL);
-	free(points);
 	printf("CREATED!\n");
 	sqlite3_close(db);
 

@@ -9,9 +9,9 @@ int main(int argc, char *argv[]){
 	int count = atoi(argv[1]);
 	bbox *b = gen_bbox(-100000,-100000,100000,100000);
 	point **p = create_random(count,b);
-	create_db("ran",p,count);
+	create_db("ran","ran",p,count);
 	point **q = create_gaussian(count,b,0.2);
-	create_db("gau",q,count);
+	create_db("gau","gau",q,count);
 	printf("data is COMPLETED!\n");
 	return 0;
 }

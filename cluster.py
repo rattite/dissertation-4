@@ -50,8 +50,8 @@ def test_clustering(sub):
     connectivity = 0.5 * (connectivity + connectivity.T)
 
 # ============
-    dbscan = cluster.DBSCAN(eps=0.18,min_samples=60)
-    #dbscan = cluster.HDBSCAN(min_cluster_size=67,min_samples=30,cluster_selection_epsilon=0.1,cluster_selection_method="eom",allow_single_cluster=True)
+    dbscan = cluster.DBSCAN(eps=0.15,min_samples=30)
+    #dbscan = cluster.HDBSCAN(min_cluster_size=20,min_samples=64,cluster_selection_epsilon=0.12,cluster_selection_method="eom",allow_single_cluster=True)
     clustering_algorithms = (
         ("HDBSCAN", dbscan),
     )
@@ -224,8 +224,8 @@ def clustering(filename,shapefile=None):
     data = get_data(filename)
     aq = np.array(data)
 
-    if len(aq) > 1024:
-        idx = np.random.choice(aq.shape[0], size=1024, replace=False)
+    if len(aq) > 2048:
+        idx = np.random.choice(aq.shape[0], size=2048, replace=False)
         sub = aq[idx]
     else:
         sub = aq

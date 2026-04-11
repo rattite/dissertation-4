@@ -7,6 +7,9 @@ while true; do
     sleep 10
     python run_tests.py large "$counter"
     sleep 10
+    python run_tests.py indonesia "$counter"
+    sleep 10
+    python run_tests.py texas "$counter"
     ((counter++))
     if [ "$counter" -gt 17 ]; then
         counter=4

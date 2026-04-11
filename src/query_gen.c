@@ -58,6 +58,7 @@ int main(int arcg, char *argv[]){
 	sqlite3_finalize(stmt);
 	free(p);
 	printf("printing grid\n");
+
 	for (int i=0;i<20;i++){printf("%d\n", grid[i]);}
 	double world_x = world->max_x - world->min_x;
 	double world_y = world->max_y - world->min_y;
@@ -74,7 +75,7 @@ int main(int arcg, char *argv[]){
 	double rad;
 	int cell_x;
 	int cell_y;
-	int min_rad = 1000;
+	int min_rad = 2500;
 	int max_rad = 20 * min_rad;
 	//generates queries
 	for (int i=0;i<no;i++){
@@ -96,7 +97,7 @@ int main(int arcg, char *argv[]){
 		f = ((float)rand())/RAND_MAX;
 		q_y = (world->min_y + (grid_y*cell_y)+f*grid_y);
 		f = ((float)rand())/RAND_MAX;
-		rad = min_rad + 19*min_rad*f;
+		rad = min_rad + 9*min_rad*f;
 		fprintf(fil,"%.0f\n%.0f\n%.0f\n", q_x,q_y,rad);
 	}
 	fclose(fil);

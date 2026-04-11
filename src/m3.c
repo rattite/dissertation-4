@@ -32,11 +32,17 @@ Node2 **make_trees(point **points, int pnum, bbox *bounds, bbox **clusters, int 
 	Node2 **n = malloc((cluster_count+1)*sizeof(Node2 *));
 	int count = 0;
 	n[0] = make_tree_2(p[0],pcount[0],bounds,b_minp,0,&count);
+	for (int j=0;j<pcount[0];j++){free(p[0][j]);}
+	free(p[0]);
 	for (int i=1;i<cluster_count+1;i++){
 		count = 0;
 		n[i] = make_tree_2(p[i],pcount[i],clusters[i-1],c_minp,0,&count);
+		for (int j=0;j<pcount[i];j++){free(p[i][j]);}
+		free(p[i]);
 	}
 	//now we do partitioning lark
+	free(p);
+	printf("tree\n");
 	return n; 
 }
 void partition_through_multiple_trees(sqlite3 *db, char *tab, char *col, char *ind, Node2 **n, char *partname, int c_count, rule *r,int base_depth, int c_depth){
@@ -78,6 +84,7 @@ void partition_through_multiple_trees(sqlite3 *db, char *tab, char *col, char *i
 				if (point_in_bbox(c,n[i]->boundaries)){
 					cnum = i;
 					d = c_depth;
+					break;
 				}
 			}
 			start = n[cnum];
