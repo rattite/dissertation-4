@@ -77,6 +77,7 @@ class test_case(BaseEstimator):
     def __init__(self):
         self.times = []
         self.hit = []
+        self.avg_time = 0
         self.avg_hit = 0
         pass
 
@@ -93,15 +94,15 @@ class test_case(BaseEstimator):
         return {}
     def fit(self, X=None, y=None):
         runs = []
-        for _ in range(6):
+        for _ in range(4):
             self.run(**X)
             runs.append(self.times[-1])
 
-        self.avg_time_ = sum(runs) / len(runs)
+        self.avg_time = sum(runs) / len(runs)
         return self
 
     def score(self, X=None, y=None):
-        return -self.avg_time_
+        return -self.avg_time
 
     @classmethod
     def optimise(cls, X):
@@ -115,7 +116,7 @@ class test_case(BaseEstimator):
             
             obj.times = []
             obj.fit(X) 
-            mean_time = obj.avg_time_
+            mean_time = obj.avg_time
             r.append(obj)
             
             if mean_time < best_time:
@@ -142,6 +143,7 @@ class test_case(BaseEstimator):
     @classmethod
     def serialise_list(cls,filename:str,cases:list[test_case]):
         for case in cases:
+            case.avg_time = sum(case.times)/len(case.times)
             case.avg_hit = sum(case.hit)/len(case.hit)
         f = open(filename, "w")
         json.dump([c.to_dict() for c in cases],f,indent=4)
@@ -219,7 +221,7 @@ class m1_case(test_case):
         self.label = "Index-Ranges"
     @classmethod
     def get_param_grid(cls):
-        return {"ind_depth": [4,6,8,10], "pnum": [16,32,64]}
+        return {"ind_depth": [6,8,10], "pnum": [16,32,64]}
 
     def gpl(self):
         return "d="+self.ind_depth+"\n, p="+self.pnum
@@ -434,22 +436,22 @@ def test_if_clusters(filename):
     return l
 
 #TODO: optimise for the main dataset, then refine!
-def othertest(name,flag,reps):
+def othertest(name,flag,reps,cases=None):
     #we can put parameters here manually, if we so wish
 
 
     qname = "data/"+name
     f2 = False
-    if test_if_clusters("data/stops.lizard") > 0:
+    if test_if_clusters("data"+name+".lizard") > 0:
         f2 = True
     if flag == 0:
         query.generate_query_set(qname+".sqlite",name,"cent",200,32,32,4096,qname+".queries")
     else:
-        query.generate_clus_query_set(qname+".sqlite",name,"cent",200,"data/stops.lizard",qname+".queries")
+        query.generate_clus_query_set(qname+".sqlite",name,"cent",200,"data"+name+"lizard",qname+".queries")
 
     
     X = {"filename": qname + ".sqlite","tab": name,"col": "cent","queries_file": qname + ".queries"}
-    X1 = {"filename": qname + ".sqlite","tab": name,"col": "cent","queries_file": qname + ".queries", "clus": "data/stops.lizard"}
+    X1 = {"filename": qname + ".sqlite","tab": name,"col": "cent","queries_file": qname + ".queries", "clus": qname+"lizard"}
 
     pat = Path("data/"+name)
     pat2 = Path("img/"+name)
@@ -461,19 +463,19 @@ def othertest(name,flag,reps):
         pat2.mkdir(parents=True, exist_ok=True)        
     except FileExistsError:
         print("this is bad")
-
-    cases = []
-    cases.append(naive_case())
-    cases.append(good_case())
-    cases.append(index_case(8,0))
-    cases.append(m1_case(6,32))
-    cases.append(m1_case(8,32))
-    cases.append(m2_case(4,64))
+    if cases == None:
+        cases = []
+        cases.append(naive_case())
+        cases.append(good_case())
+        cases.append(index_case(8,0))
+        cases.append(m1_case(6,32))
+        cases.append(m1_case(8,32))
+        cases.append(m2_case(4,64))
 
     if f2 == True:
         m3c = m3_case(128,128,4,4)
         for i in range(reps):
-             m3c.run(qname+".sqlite",name,"cent",qname+".queries","data/stops.lizard")
+             m3c.run(qname+".sqlite",name,"cent",qname+".queries",qname+".lizard")
 
     for case in cases:
         for i in range(reps):
@@ -492,10 +494,13 @@ def rt(name,flag,reps):
 
 
     qname = "data/"+name
-    c = cluster.clustering(qname+".dat")
+    #c = cluster.clustering(qname+".dat")
     f2 = False
-    if c > 0:
+    #if c > 0:
+     #   f2 = True
+    if test_if_clusters("data/"+name+".lizard") > 0:
         f2 = True
+
     if flag == 0:
         query.generate_query_set(qname+".sqlite",name,"cent",200,32,32,4096,qname+".queries")
     else:
@@ -555,6 +560,8 @@ def rt(name,flag,reps):
 
 
     graph_final_results(cases,name,1,flag)
+    return cases
+
 
 
 if __name__ == "__main__":
@@ -569,9 +576,16 @@ if __name__ == "__main__":
     rt(sys.argv[1],1,int(sys.argv[2]),f2)
     time.sleep(5)
     """
-    othertest(sys.argv[1],0,int(sys.argv[2]))
+    prefix = "_10000"
+    if (sys.argv[1] == "stops"):
+        prefix = "_0"
+    ca = rt(sys.argv[1]+prefix,0,int(sys.argv[2]))
     time.sleep(5)
-    othertest(sys.argv[1],1,int(sys.argv[2]))
+    othertest(sys.argv[1],0,6,ca)
+    time.sleep(5)
+    cb = rt(sys.argv[1]+prefix,1,int(sys.argv[2]))
+    time.sleep(5)
+    othertest(sys.argv[1],1,6,cb)
     time.sleep(5)
     #sends a desktop notification so i can see when the script finishes
     try:

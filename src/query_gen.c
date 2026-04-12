@@ -64,7 +64,7 @@ int main(int arcg, char *argv[]){
 	double world_y = world->max_y - world->min_y;
 	double grid_x = world_x / len_x;
 	double grid_y = world_y / len_y;
-
+	double diag = sqrt(world_x*world_x+world_y*world_y);
 	//opens output file
 	FILE *fil = fopen(argv[8],"w");
 	float f;

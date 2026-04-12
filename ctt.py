@@ -2,8 +2,7 @@ from run_tests import test_case
 import os
 import sys
 
-#converts a case file to a LaTeX table
-#this is an incredibly stupid idea, and i have no idea why i'm doing this
+#fixes mistaks
 global suff
 suff = [".allind", ".all1", ".all2", ".all3", ".best"]
 #ok, think about it

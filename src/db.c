@@ -20,6 +20,11 @@ void normalise_bbox(bbox *b, bbox *ref){
 	b->min_y = (b->min_y-ref->min_y)/(ref->max_y-ref->min_y);
 	b->max_x = (b->max_x-ref->min_x)/(ref->max_x-ref->min_x);
 	b->max_y = (b->max_y-ref->min_y)/(ref->max_y-ref->min_y);
+	//adds processing for when we're at poles and such
+	if (b->min_x < 0){b->min_x = 0;}
+	if (b->min_y < 0){b->min_y = 0;}
+	if (b->max_x > 1){b->max_x = 1;}
+	if (b->max_y > 1){b->max_y = 1;}
 
 }
 
@@ -30,7 +35,7 @@ bbox *get_db_boundaries(sqlite3 *db, char *tab, char *col){
 	//clock_t start = clock();
 	char sql[256];
 	sqlite3_stmt *stmt;
-	sqlite3_exec(db, "SELECT UpdateLayerStatistics()",NULL,NULL,NULL);
+	//sqlite3_exec(db, "SELECT UpdateLayerStatistics()",NULL,NULL,NULL);
  	snprintf(sql,sizeof(sql), "SELECT extent_min_x, extent_min_y, extent_max_x, extent_max_y FROM geometry_columns_statistics WHERE f_table_name = \'%s\' AND f_geometry_column = \'%s\'",tab, col);
 	if(sqlite3_prepare_v2(db,sql,-1,&stmt,NULL)!=SQLITE_OK){printf("error %s\n", sqlite3_errmsg(db));}
 	bbox *b = (bbox *)malloc(sizeof(bbox));
@@ -41,13 +46,14 @@ bbox *get_db_boundaries(sqlite3 *db, char *tab, char *col){
 	b->max_y = sqlite3_column_double(stmt, 3);
 	//clock_t end = clock();
 	//printf("time taken to get db boundaries: %f\n",(double)(end-start)/CLOCKS_PER_SEC);
+	sqlite3_finalize(stmt);
 
 	return b;
 }
 
 
 double make_range_with_index(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, double rad, int lim, rule *base, int verbose, int ind_depth){
-	//Makes a GOOD range query on a particular table. 
+	//Makes a GOOD range query on a particular table
 	clock_t start = clock();
 	point *p = (point *)malloc(sizeof(point));
 	p->x = x;
@@ -234,9 +240,10 @@ void add_index(sqlite3 *db, char *tab, char *col, rule *base, char *name, int de
 	    //printf("c is %f %f\n", c->x, c->y);
 	    gaiaFreeGeomColl(geom);
 	    index = get_index(c,base,depth); //TODO: change up how precision is calculated
-	    sqlite3_bind_int(add_stmt,1,index);
-	    sqlite3_bind_int(add_stmt,2,id);
-	    sqlite3_step(add_stmt);
+	    if(sqlite3_bind_int(add_stmt,1,index)!=SQLITE_OK){printf("err2: %s\n", sqlite3_errmsg(db));}
+	    if(sqlite3_bind_int(add_stmt,2,id)!=SQLITE_OK){printf("err2: %s\n", sqlite3_errmsg(db));}
+	    //this line specifically is giving errors
+	    if(sqlite3_step(add_stmt)!=SQLITE_DONE){printf("err: 2%s\n", sqlite3_errmsg(db));}
 	    sqlite3_reset(add_stmt);
 	}
 	sqlite3_finalize(stmt);

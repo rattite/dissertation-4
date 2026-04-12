@@ -1,10 +1,10 @@
 10
-data/stops_0.sqlite
-stops_0
+data/marten_10000.sqlite
+marten_10000
 cent
-data/stops_0.queries
-data/stops.lizard
+data/marten_10000.queries
+data/marten_10000.lizard
 128
-4
-128
-4
+6
+256
+6

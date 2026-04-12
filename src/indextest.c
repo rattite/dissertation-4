@@ -60,6 +60,7 @@ int main(int argc, char *argv[]){
 		remove_index_col(db,argv[2],"test");
 		sqlite3_close(db);
 	}
+	printf("completed!\n");
 	return 0;
 }
 

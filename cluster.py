@@ -50,6 +50,8 @@ def test_clustering(sub):
     connectivity = 0.5 * (connectivity + connectivity.T)
 
 # ============
+    #dbscan = cluster.DBSCAN(eps=0.15,min_samples=30)
+    #nyc
     dbscan = cluster.DBSCAN(eps=0.15,min_samples=30)
     #dbscan = cluster.HDBSCAN(min_cluster_size=20,min_samples=64,cluster_selection_epsilon=0.12,cluster_selection_method="eom",allow_single_cluster=True)
     clustering_algorithms = (

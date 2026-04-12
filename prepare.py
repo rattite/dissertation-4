@@ -5,7 +5,8 @@ usage:
     prepare.py <name>
     where <name> is the name of the dataset, eg. "example" if our input file is "example.geojson"
     """
-
+import csv
+import json
 from osgeo import ogr, gdal
 import subprocess
 import os
@@ -29,6 +30,7 @@ def convert(geojson_path, spatialite_path, layer_name):
     dest_ds = None
     print(f"Success! {geojson_path} converted to {spatialite_path}")
 
+
 def add_col(name):
     subprocess.run(["bin/process", "data/"+name+".sqlite",name,"GEOMETRY","cent"])
 
@@ -41,12 +43,13 @@ def clean(name):
 #takes a raw geojson file, converts it and prepares it
 
 if len(sys.argv) < 2:
-    print("usage: draw3.py <name>")
+    print("usage: prepare.py <name>")
     exit()
 name = sys.argv[1]
 convert("data/"+name+".geojson", "data/"+name+".sqlite", name)
 add_col(name)
 gp(name)
 clean(name)
+
 print("COMPLETED!")
 
