@@ -65,18 +65,19 @@ int main(int argc, char *argv[]){
 	gsl_rng_set(g,seed);
 
 	bbox *d = malloc(sizeof(bbox));
-	d->min_x = -100000;
-	d->min_y = -100000;
-	d->max_x = 100000;
-	d->max_y = 100000;
+	d->min_x = -200000;
+	d->min_y = -200000;
+	d->max_x = 200000;
+	d->max_y = 200000;
 	double diag_dist = sqrt((d->max_y-d->min_y)*(d->max_x-d->min_x));
 	double lp = 5;
-	double mu = 4096;
+	double mu = 20480;
 	double sigma = 67;
-	int ran_count = 8192;
 	int samples = atoi(argv[1]);
 	unsigned int cc = poisson(g,lp);
 	if (cc < 6){cc=6;}
+	int ran_count = mu*cc*2;
+
 	printf("%d\n", cc);
 	unsigned int *sizes = malloc(cc*sizeof(unsigned int));
 	point ***c = malloc(cc*sizeof(point **));
@@ -84,7 +85,7 @@ int main(int argc, char *argv[]){
 
 	for (int i=0;i<cc;i++){
 		printf("cent i is %f %f\n", c_centres[i]->x, c_centres[i]->y);
-		unsigned int mu_i = poisson(g,mu);
+		unsigned int mu_i = mu + (unsigned int)(gsl_ran_gaussian(g,mu/4));
 		printf("%d\n", mu_i);
 		c[i] = malloc(mu_i * sizeof(point *));
 		sizes[i] = mu_i;
@@ -97,10 +98,10 @@ int main(int argc, char *argv[]){
 
 	//generates random points
 	bbox *b = malloc(sizeof(bbox));
-	d->min_x = -120000;
-	d->min_y = -120000;
-	d->max_x = 120000;
-	d->max_y = 120000;
+	d->min_x = -240000;
+	d->min_y = -240000;
+	d->max_x = 240000;
+	d->max_y = 240000;
 	point **ran = create_random_2(g,ran_count,d);
 
 
@@ -115,11 +116,16 @@ int main(int argc, char *argv[]){
 		}
 		curr = curr + sizes[i];
 	}
-	create_db("synthi","synthi",large,stot);
-	point **temp = realloc(large,(stot+ran_count)*sizeof(point *));
+	create_db("synth0","synth0",large,stot);
+	point **temp = realloc(large,(stot+ran_count/2)*sizeof(point *));
 	large = temp;
-	for (int i=stot;i<stot+ran_count;i++){large[i]=ran[i-stot];}
-	create_db("synth","synth",large,stot+ran_count);
+	for (int i=stot;i<stot+ran_count/2;i++){large[i]=ran[i-stot];}
+	create_db("synth1","synth1",large,stot+ran_count/2);
+	point **temp2 = realloc(large,(stot+ran_count)*sizeof(point *));
+	large = temp2;
+	for (int i=stot+ran_count/2;i<stot+ran_count;i++){large[i]=ran[i-stot];}
+	create_db("synth2","synth2",large,stot+ran_count);
+
 	printf("completed!\n");
 }
 		

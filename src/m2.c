@@ -321,7 +321,10 @@ void range_4_help(sqlite3 *db, char *tab, char *col, char *ind, double x, double
 	if (*found < 0){return;}
 	//if the query area doesn't interesect the node
 	bbox *intersect = get_intersect_help(query,n->boundaries);
-	if (intersect == NULL){return;}
+	if (intersect == NULL){
+		free(intersect); 
+		return;
+	}
 	if (n->leaf != 1){
 		//performs range queries on child nodes
 		for (int qwerty=0;qwerty<4;qwerty++){
@@ -346,6 +349,7 @@ void range_4_help(sqlite3 *db, char *tab, char *col, char *ind, double x, double
 			snprintf(s2,sizeof(s2),"SELECT ogc_fid, %s FROM %s","geom", name); //TODO: this is hardcoded!
 			if(sqlite3_prepare_v2(db,s2,-1,&sel_stmt,NULL)!=SQLITE_OK){printf("err111: %s\n", sqlite3_errmsg(db));}
 			while (sqlite3_step(sel_stmt) == SQLITE_ROW){
+				(*checked)++;
 	    			const void *blob = sqlite3_column_blob(sel_stmt, 1);
 	    			int blob_size = sqlite3_column_bytes(sel_stmt, 1);
 	    			gaiaGeomCollPtr geom = gaiaFromSpatiaLiteBlobWkb(blob, blob_size);
@@ -358,62 +362,60 @@ void range_4_help(sqlite3 *db, char *tab, char *col, char *ind, double x, double
 					//printf("id %d x: %f y: %f\n",sqlite3_column_int(sel_stmt,0),pt->X,pt->Y);
 					(*found)++;
 					}
-					gaiaFreeGeomColl(geom);
+				gaiaFreeGeomColl(geom);
 				}
-	} else{
-		rangelist *rl = get_ranges_2(intersect,base,ind_depth);
-		for (int tes = 0;tes<rl->len;tes++){
-			//printf("range %d has start %d end %d\n", tes,rl->ranges[tes]->start, rl->ranges[tes]->end);
+			sqlite3_finalize(sel_stmt);
+			return;	
+		} else{
+			rangelist *rl = get_ranges_2(intersect,base,ind_depth);
+			for (int tes = 0;tes<rl->len;tes++){
+				//printf("range %d has start %d end %d\n", tes,rl->ranges[tes]->start, rl->ranges[tes]->end);
+			}
+			//creates temporary table
+			sqlite3_stmt *stmt_x;
+			char *s1 = "CREATE TEMP TABLE IF NOT EXISTS candidates(ogc_fid INTEGER PRIMARY KEY, ind INTEGER)";
+			if(sqlite3_exec(db,s1,NULL,NULL,NULL)!=SQLITE_OK){printf("error: %s\n",sqlite3_errmsg(db));}
+			char s2[256];
+			//prepares insert statement
+			snprintf(s2,sizeof(s2),"INSERT OR IGNORE INTO candidates(ogc_fid,ind) SELECT ogc_fid, %s FROM %s WHERE %s BETWEEN ? AND ?",ind,name,ind);
+			if(sqlite3_prepare_v2(db,s2,-1,&stmt_x,NULL)!=SQLITE_OK){printf("err: %s\n", sqlite3_errmsg(db));}
+			sqlite3_exec(db, "BEGIN", NULL, NULL, NULL);
+			//iterates over ranges and inserts for each range
+			for (int k=0;k<rl->len;k++){
+			sqlite3_bind_int(stmt_x,1,rl->ranges[k]->start);
+			sqlite3_bind_int(stmt_x,2,rl->ranges[k]->end);
+			sqlite3_step(stmt_x);
+			sqlite3_reset(stmt_x);
+			sqlite3_clear_bindings(stmt_x);
+			}
+			free_rangelist(rl);
+			sqlite3_finalize(stmt_x);
+			sqlite3_exec(db, "COMMIT", NULL, NULL, NULL);
+
+			char s3[256];
+			snprintf(s3, sizeof(s3), "SELECT %s, ogc_fid FROM candidates c JOIN %s USING(ogc_fid)","geom",name);
+			if(sqlite3_prepare_v2(db,s3,-1,&sel_stmt,NULL)!=SQLITE_OK){printf("err4:%s\n", sqlite3_errmsg(db));}
+			//selects all points from candidates
+			while (sqlite3_step(sel_stmt) == SQLITE_ROW){
+				(*checked)++;
+			const void *blob = sqlite3_column_blob(sel_stmt, 0);
+			int blob_size = sqlite3_column_bytes(sel_stmt, 0);
+			gaiaGeomCollPtr geom = gaiaFromSpatiaLiteBlobWkb(blob, blob_size);
+			gaiaPointPtr pt = geom->FirstPoint;
+			//Euclidean distance calculation, this relies on us being in EPSG3857
+			double dx = x-pt->X;
+			double dy = y-pt->Y;
+			double dist2 = (dx*dx + dy*dy);
+			if (dist2 < rad2){
+				//printf("id %d x: %f y: %f\n",sqlite3_column_int(sel_stmt,1),pt->X,pt->Y);
+				(*found)++;
+			}
+		    gaiaFreeGeomColl(geom);
 		}
-		//creates temporary table
-		sqlite3_stmt *stmt_x;
-		char *s1 = "CREATE TEMP TABLE IF NOT EXISTS candidates(ogc_fid INTEGER PRIMARY KEY, ind INTEGER)";
-		if(sqlite3_exec(db,s1,NULL,NULL,NULL)!=SQLITE_OK){printf("error: %s\n",sqlite3_errmsg(db));}
-		char s2[256];
-		//prepares insert statement
-		snprintf(s2,sizeof(s2),"INSERT OR IGNORE INTO candidates(ogc_fid,ind) SELECT ogc_fid, %s FROM %s WHERE %s BETWEEN ? AND ?",ind,name,ind);
-		if(sqlite3_prepare_v2(db,s2,-1,&stmt_x,NULL)!=SQLITE_OK){printf("err: %s\n", sqlite3_errmsg(db));}
-		sqlite3_exec(db, "BEGIN", NULL, NULL, NULL);
-		//iterates over ranges and inserts for each range
-		for (int k=0;k<rl->len;k++){
-		sqlite3_bind_int(stmt_x,1,rl->ranges[k]->start);
-		sqlite3_bind_int(stmt_x,2,rl->ranges[k]->end);
-		sqlite3_step(stmt_x);
-		sqlite3_reset(stmt_x);
-		sqlite3_clear_bindings(stmt_x);
+		sqlite3_finalize(sel_stmt);
+		sqlite3_exec(db, "DELETE FROM candidates", NULL, NULL, NULL);
+		return ;
 		}
-	    	free_rangelist(rl);
-		free(intersect);
-		sqlite3_finalize(stmt_x);
-		sqlite3_exec(db, "COMMIT", NULL, NULL, NULL);
-
-
-
-
-	//start = clock();
-		char s3[256];
-      		snprintf(s3, sizeof(s3), "SELECT %s, ogc_fid FROM candidates c JOIN %s USING(ogc_fid)","geom",name);
-		if(sqlite3_prepare_v2(db,s3,-1,&sel_stmt,NULL)!=SQLITE_OK){printf("err4:%s\n", sqlite3_errmsg(db));}
-		//selects all points from candidates
-		while (sqlite3_step(sel_stmt) == SQLITE_ROW){
-			(*checked)++;
-	    	const void *blob = sqlite3_column_blob(sel_stmt, 0);
-	    	int blob_size = sqlite3_column_bytes(sel_stmt, 0);
-	    	gaiaGeomCollPtr geom = gaiaFromSpatiaLiteBlobWkb(blob, blob_size);
-	    	gaiaPointPtr pt = geom->FirstPoint;
-	    	//Euclidean distance calculation, this relies on us being in EPSG3857
-		double dx = x-pt->X;
-		double dy = y-pt->Y;
-		double dist2 = (dx*dx + dy*dy);
-		if (dist2 < rad2){
-			//printf("id %d x: %f y: %f\n",sqlite3_column_int(sel_stmt,1),pt->X,pt->Y);
-			(*found)++;
-		}
-	    gaiaFreeGeomColl(geom);
-	}
-	sqlite3_finalize(sel_stmt);
-	sqlite3_exec(db, "DELETE FROM candidates", NULL, NULL, NULL);
-	}
 	}
 }
 

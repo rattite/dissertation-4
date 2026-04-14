@@ -7,7 +7,7 @@
 #include "grid.h"
 
 void run_demo_query(sqlite3 *db){
-	const char *sql = "SELECT f_table_name FROM geometry_columns_statistics WHERE f_geometry_column = 'geom'";
+	const char *sql = "SELECT f_table_name FROM geometry_columns_statistics WHERE f_geometry_column = 'cent'";
 	char count_sql[256];
 	sqlite3_stmt *stmt;
 	sqlite3_stmt *count_stmt;
@@ -49,11 +49,13 @@ int main(int argc, char *argv[]){
 		run_demo_query(db);
 		partition_col_by_index_ranges(db,"large","cent","arg1",r,base,4);
 		//do dummy query to warm up the database
+		for (int i=0;i<4;i++){
     		clock_gettime(CLOCK_MONOTONIC, &start);
-		beter2(db, "large", "cent", "arg1", -460000, 6625000, 20000, 100000, base, 0,4);
+		beter3(db, "large", "cent", "arg1", -460000, 6625000, 20000, 100000, base, 0,4);
     		clock_gettime(CLOCK_MONOTONIC, &end);
     		double elapsed = (end.tv_sec - start.tv_sec) +(end.tv_nsec - start.tv_nsec) / 1e9;
 		printf("clock strikes 12 midnight arrives %.9f seconds\n", elapsed);
+		}
 		//this seems like an issue with page cache?
 		//ie. the first time the program is ran, it's slow, and the second time it's rather fast
 
@@ -81,7 +83,7 @@ int main(int argc, char *argv[]){
 			rangelist *r = make_partitions_by_population(indx, rangeno, count,depth,1); 
 			partition_col_by_index_ranges(db,argv[2],argv[3],"test",r,base,depth);
 			
-			beter2(db, argv[2], argv[3], "test", q[0]->x, q[0]->y, q[0]->rad, 100000, base, 0,depth);
+			beter3(db, argv[2], argv[3], "test", q[0]->x, q[0]->y, q[0]->rad, 100000, base, 0,depth);
 			remove_index_col(db,"large","arg1");
 			sqlite3_close(db);
 		} else{

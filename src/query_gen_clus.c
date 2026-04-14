@@ -40,30 +40,33 @@ int main(int argc, char *argv[]){
 	float f;
 	float rad;
 	for (int i=0;i<bnum;i++){
+		printf("ok!\n");
+		printf("%f %f %f %f\n", clus[i]->min_x, clus[i]->min_y, clus[i]->max_x, clus[i]->max_y);
 		bbox_get_lengths(clus[i],&xlen,&ylen);
-		printf("xlen is %f ylen is %f\n", xlen, ylen);
+		//printf("xlen is %f ylen is %f\n", xlen, ylen);
 		float size = sqrt(xlen*ylen);
 		printf("size is %f\n", size);
 		double mid_x = (clus[i]->min_x+clus[i]->max_x)/2;
 		double mid_y = (clus[i]->min_y+clus[i]->max_y)/2;
-		double diag = sqrt((clus[i]->max_x-clus[i]->min_x)*(clus[i]->max_y-clus[i]->min_x));
+		double diag = sqrt(fabs(clus[i]->max_x-clus[i]->min_x)*fabs(clus[i]->max_y-clus[i]->min_y));
 		for (int j=0;j<no/bnum;j++){
 			f = ((float)rand())/RAND_MAX;
 			float q_x = (clus[i]->min_x + (0.15*xlen)+(0.75*f*xlen));
 			f = ((float)rand())/RAND_MAX;
 			float q_y = (clus[i]->min_y+(0.15*ylen) + (0.75*f*ylen));
-			float xl = abs(q_x-clus[i]->min_x);
-			float xu = abs(q_x-clus[i]->max_x);
-			float yl = abs(q_y-clus[i]->min_y);
-			float yu = abs(q_y-clus[i]->max_y);
+			float xl = fabs(q_x-clus[i]->min_x);
+			float xu = fabs(q_x-clus[i]->max_x);
+			float yl = fabs(q_y-clus[i]->min_y);
+			float yu = fabs(q_y-clus[i]->max_y);
 			float out = max(xl,xu,yl,yu);
 			f = ((float)rand())/RAND_MAX;
 			//float q;
 			//if (q_x < q_y){q=q_y;}else{q=q_x;}
 			//rad = (0.1+0.9*f)*out;
 			double ed = pow(((q_x-mid_x)*(q_x-mid_x)+(q_y-mid_y)*(q_y-mid_y)),0.5);
-			printf("ed is %f\n", ed);
-			rad = 300 + diag*pow(ed/diag,1.3);
+			//printf("diag is %f\n", diag);
+			//printf("ed is %f\n", ed);
+			rad = 300 + diag*pow(ed/diag,2);
 				printf("rad is %f\n", rad);	
 			fprintf(fil,"%.0f\n%.0f\n%.0f\n", q_x,q_y,rad);
 			}

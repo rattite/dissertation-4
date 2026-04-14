@@ -1,0 +1,23 @@
+TODO TODAY:
+-measure time for each part of query
+-measure on SYNTHETIC DATA
+-how do we get synthetic data? no fucking idea
+-fix query generation
+
+RESULTS WE HAVE WRITTEN
+
+-effects of tolerance
+-index + hyperparameters for random and gaussian data
+-scaling with database size
+-memory usage
+
+at this point, we just need to get the 3 big datasets out, and then do whatever we need to after that
+
+stops dataset: GOOD
+synth dataset (+ islands): GOOD
+NYC dataset: GOOD
+
+
+
+todo: run tests on STOPS, SYNTH, NYC
+ALL HAVE GOOD CLUSTERINGS!!!!

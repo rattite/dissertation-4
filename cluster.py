@@ -54,8 +54,9 @@ def test_clustering(sub):
     #dbscan = cluster.DBSCAN(eps=0.15,min_samples=30)
     #nyc
     #dbscan = cluster.DBSCAN(eps=0.14,min_samples=32)
-    #for large:
-    dbscan = cluster.DBSCAN(eps=0.1, min_samples=20)
+    #THIS WORKS FOR STOPS
+    #dbscan = cluster.DBSCAN(eps=0.1, min_samples=20)
+    dbscan = cluster.DBSCAN(eps=0.18, min_samples=24)
     #dbscan = cluster.HDBSCAN(min_cluster_size=24,min_samples=16,cluster_selection_method="eom",allow_single_cluster=True)
     clustering_algorithms = (
         ("HDBSCAN", dbscan),
@@ -162,6 +163,8 @@ def fix_bboxes(b1, b2):
             s1[2] = s2[0] - 100
         else:
             s1[0] = s2[2] + 100
+        return (s2, s1) if swapped else (s1, s2)
+      
     if s1[3] > s2[1] and s1[1] < s2[3]:
         if abs(s1[3] - s2[1]) < abs(s2[3] - s1[1]):
             s1[3] = s2[1] - 100
@@ -256,7 +259,7 @@ def graph_clusters(points, labels,bboxes, shapefile=None):
     fig, ax = plt.subplots(figsize=(10, 10))
     ax.set_axis_off()
 
-    colors = np.array(["lightcoral","mediumseagreen", "cornflowerblue", "orchid", "orange", "turquoise", "mediumslateblue", "pink", "#000000"])
+    colors = np.array(["lightcoral", "teal", "mediumseagreen", "cornflowerblue", "orchid", "orange", "turquoise", "mediumslateblue", "lightgreen", "palegoldenrod", "pink", "#000000"])
     if shapefile:
         ax.set_xlim(-480000,-370000)
         ax.set_ylim(6480000,6590000)
@@ -266,7 +269,7 @@ def graph_clusters(points, labels,bboxes, shapefile=None):
         #scol = (14/16, 255/256, 14/16)
         scol = "palegoldenrod"
         region.plot(ax=ax, color=scol, edgecolor="black")
-    ax.scatter(points[:, 0], points[:, 1], s=12, color=colors[labels%8])
+    ax.scatter(points[:, 0], points[:, 1], s=12, color=colors[(labels)%11+1])
 
     for b in bboxes:
         print(b)
@@ -310,6 +313,18 @@ def write_bboxes_to_file(filename,bboxes):
     f.close()
     print("COMPLETED")
 
+def read_bboxes_from_file(filename):
+    bboxes = []
+    f = open(filename,"r")
+    g = f.readlines()
+    f.close()
+    count = 0
+    for line in g:
+        if count % 4 == 0:
+            bboxes.append([0,0,0,0])
+        bboxes[-1][count] = float(g)
+        count+= 1
+    return bboxes
 
 def main():
     try:

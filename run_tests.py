@@ -210,7 +210,7 @@ class index_case(test_case):
         return "d="+self.ind_depth+self.curve
     @classmethod
     def get_param_grid(cls):
-        return {"ind_depth": [4,6,8,10], "curve":[0,1]}
+        return {"ind_depth": [6,8], "curve":[0,1]}
     def subp(self,filename:str, tab:str, col:str, queries_file:str):
         return subprocess.Popen(["bin/indextest",filename,tab,col,queries_file,self.ind_depth, self.curve])
 
@@ -561,7 +561,7 @@ def rt(name,flag,reps):
     cases.append(besti)
     test_case.serialise_list("data/"+name+"/"+str(time.time())+"_"+str(flag)+".allind", alli)
     graph_final_results(alli,name,0,flag)
-    """
+
     best1, all1 = m1_case.optimise(X)
     cases.append(best1)
     test_case.serialise_list("data/"+name+"/"+str(time.time())+"_"+str(flag)+".all1", all1)
@@ -577,14 +577,11 @@ def rt(name,flag,reps):
         graph_final_results(all3,name,0,flag)
         for i in range(reps):
              best3.run(qname+".sqlite",name,"cent",qname+".queries",qname+".lizard")
-    """
     for case in cases:
         for i in range(reps):
             case.run(qname+".sqlite",name,"cent",qname+".queries")
-    """
     if f2 == True:
         cases.append(best3)
-    """
     test_case.serialise_list("data/"+name+"/"+str(time.time())+"_"+str(flag)+".best",cases)
 
 
@@ -637,8 +634,8 @@ def tunerun(tune,whole,reps):
 
 if __name__ == "__main__":
     #test_size("large")
-    rt("stops",1,6)
-    #tunerun(sys.argv[1],sys.argv[2],int(sys.argv[3]))
+    #rt("stops",1,6)
+    tunerun(sys.argv[1],sys.argv[2],int(sys.argv[3]))
     #sends a desktop notification so i can see when the script finishes
     try:
         subprocess.run(["notify-send", "-u", "critical", "ACTION REQUIRED: GRADUATION", "COMPLETED!"], check=True)

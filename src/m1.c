@@ -41,7 +41,7 @@ void partition_col_by_index_ranges(sqlite3 *db, char *tab, char *col,char *ind, 
 	snprintf(sql,sizeof(sql), "CREATE TABLE %s (ogc_fid INTEGER NOT NULL PRIMARY KEY)",name);
 	ret = sqlite3_exec (db, sql, NULL, NULL, NULL);
 	//add geometry column
-    	snprintf(sql,sizeof(sql),"SELECT AddGeometryColumn(\'%s\', 'geom', 3857, 'POINT', 2)",name);
+    	snprintf(sql,sizeof(sql),"SELECT AddGeometryColumn(\'%s\', \'%s\', 3857, 'POINT', 2)",name,col);
     	ret = sqlite3_exec (db, sql, NULL, NULL, NULL);
 	//add index column:
 	snprintf(sql, sizeof(sql), "ALTER TABLE %s ADD %s INT NULL", name, ind);
@@ -77,6 +77,7 @@ void partition_col_by_index_ranges(sqlite3 *db, char *tab, char *col,char *ind, 
 		for (int i = 0; i< ranges->len; i++){
 			if (index >= ranges->ranges[i]->start && index <= ranges->ranges[i]->end){
 				k = i;
+				break;
 			}
 		}
 		snprintf(ins,sizeof(ins), "INSERT INTO %s_part_%d VALUES (?,?,?)", tab, k);
@@ -85,8 +86,9 @@ void partition_col_by_index_ranges(sqlite3 *db, char *tab, char *col,char *ind, 
 		sqlite3_bind_blob(ins_stmt,2,blob,blob_size,SQLITE_TRANSIENT);
 		sqlite3_bind_int(ins_stmt,3,index);
 		sqlite3_step(ins_stmt);
+		sqlite3_finalize(ins_stmt);
+
 	}
-	sqlite3_finalize(ins_stmt);
 	sqlite3_finalize(sel_stmt);
     	strcpy (sql, "COMMIT");
     	sqlite3_exec (db, sql, NULL, NULL, NULL);
@@ -113,6 +115,7 @@ void partition_col_by_index_ranges(sqlite3 *db, char *tab, char *col,char *ind, 
 		if(sqlite3_exec(db, ch,NULL,NULL,NULL)!=SQLITE_OK){printf("err: %s\n", sqlite3_errmsg(db));}
 
 	}
+	sqlite3_finalize(meta);
 }
 /*
 void partitioned_index_range_query(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, double rad, int lim, rule *base, int verbose);
@@ -318,6 +321,126 @@ void beter15(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, d
 
 
 }
+
+double beter3(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, double rad, int lim, rule *base, int verbose, int ind_depth){
+	point *p = (point *)malloc(sizeof(point));
+	p->x = x;
+	p->y = y;
+	bbox *world = get_db_boundaries(db,tab,col);
+	normalise(p,world);
+	bbox *b = (bbox *)malloc(sizeof(bbox));
+	//TODO: add processing for when we're at poles or dateline
+	b->min_x = x-rad;
+	b->max_x = x+rad;
+	b->min_y = y-rad;
+	b->max_y = y+rad;
+	normalise_bbox(b, world);
+	rangelist *rl = get_ranges_2(b,base,ind_depth); 
+	for (int i=0;i<rl->len;i++){
+	}
+		
+	char r_sql[256];
+	sqlite3_stmt *r_stmt;
+	snprintf(r_sql,sizeof(r_sql),"SELECT start, end FROM %s_parts_ind", tab);
+	if(sqlite3_prepare_v2(db,r_sql,-1,&r_stmt,NULL)!=SQLITE_OK){printf("err: %s\n", sqlite3_errmsg(db));}
+	rangelist *dbr = malloc(sizeof(rangelist));
+	int p_count = 0;
+	dbr->ranges = malloc(256*sizeof(range *));
+	while (sqlite3_step(r_stmt)==SQLITE_ROW){
+		range *newr = malloc(sizeof(range));
+		newr->start = sqlite3_column_int(r_stmt,0);
+		newr->end = sqlite3_column_int(r_stmt,1);
+		dbr->ranges[p_count] = newr;
+		p_count++;
+	}
+	range **new_r = realloc(dbr->ranges,p_count*sizeof(range *));
+	dbr->ranges = new_r;
+	dbr->len = p_count;
+
+	//we have two rangelists, rl, and dbr
+	//we store a rangelist for each thing in dbr with the ranges that correspond to it
+	//we can do that by mathematics
+	indlist **result = malloc(dbr->len*sizeof(indlist *));
+	for (int i=0;i<dbr->len;i++){
+		result[i] = malloc(sizeof(indlist));
+		result[i]->pnum = 0;
+		result[i]->inds = malloc(dbr->len * sizeof(unsigned int));
+		//we will realloc this later!!!!
+	}
+	int a1 = 0;
+	int b1 = 0;
+	//eg in our case: a1 = 91,119, b1 = 96,101
+	//a1 start = 91 <= b1 end = 101 AND a1 end = 119 > b1 start = 96
+	while (a1 < rl->len && b1 < dbr->len){
+		if (rl->ranges[a1]->start <= dbr->ranges[b1]->end && rl->ranges[a1]->end >= dbr->ranges[b1]->start){
+			result[b1]->inds[result[b1]->pnum++] = a1;
+		}
+		if (rl->ranges[a1]->end < dbr->ranges[b1]->end){a1++;}
+		else{b1++;}
+	}
+	for (int i=0;i<dbr->len;i++){
+		printf("part %d\n", i);
+		for (int j=0;j<result[i]->pnum;j++){
+			printf("range %d %d\n", rl->ranges[result[i]->inds[j]]->start, rl->ranges[result[i]->inds[j]]->end);
+		}
+	}
+	char sql[10240];
+	sqlite3_stmt *get_stmt;
+	int id;
+	int total = 0;
+	int found = 0;
+	double rad2 = rad * rad;
+	for (int i=0;i<dbr->len;i++){
+		if (result[i]->pnum > 0){
+			printf("i is %d\n", i);
+			char tmp[256];
+			snprintf(sql, sizeof(sql), "SELECT ogc_fid, %s FROM %s_part_%d WHERE (%s BETWEEN %d AND %d) ",col,tab,i,ind,rl->ranges[result[i]->inds[0]]->start, rl->ranges[result[i]->inds[0]]->end);
+			for (int j=1;j<result[i]->pnum;j++){
+				snprintf(tmp,sizeof(tmp),"OR (%s BETWEEN %d AND %d) ", ind, rl->ranges[result[i]->inds[j]]->start, rl->ranges[result[i]->inds[j]]->end);
+				strcat(sql,tmp);
+			}
+			printf("sql is %s\n", sql);
+
+			sqlite3_prepare_v2(db,sql,-1,&get_stmt,NULL);
+			while (sqlite3_step(get_stmt)==SQLITE_ROW){
+				total++;
+				id = sqlite3_column_int(get_stmt, 0);
+				const void *blob = sqlite3_column_blob(get_stmt, 1);
+				int blob_size = sqlite3_column_bytes(get_stmt, 1);
+				gaiaGeomCollPtr geom = gaiaFromSpatiaLiteBlobWkb(blob, blob_size);
+				gaiaPointPtr pt = geom->FirstPoint;
+				double dx = x-pt->X;
+				double dy = y-pt->Y;
+				double dist2 = (dx*dx + dy*dy);
+				if (dist2 < rad2){
+					//printf("id %d x: %f y: %f\n",id, pt->X,pt->Y);
+					found++;
+				}
+				gaiaFreeGeomColl(geom);
+			}
+			sqlite3_finalize(get_stmt);
+		}
+	}
+
+	for (int i=0;i<dbr->len;i++){free_indlist(result[i]);}
+	free(result);
+	free_rangelist(dbr);
+	free_rangelist(rl);
+
+	//frees memory and such
+	
+	printf("found %d points!%\n", found);
+	if (found == 0 || total == 0){
+		return (double)-1;
+	}
+
+	return (double)found/(double)total;
+}
+
+void free_indlist(indlist *ind){
+	free(ind->inds);
+	free(ind);
+}
 double beter2(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, double rad, int lim, rule *base, int verbose, int ind_depth){
 	point *p = (point *)malloc(sizeof(point));
 	p->x = x;
@@ -405,7 +528,7 @@ double beter2(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, 
 	int id;
 	double rad2 = rad * rad;
 	for (int i =0;i<r_count;i++){
-		snprintf(sql,sizeof(sql),"SELECT ogc_fid, geom FROM %s_part_%d WHERE %s BETWEEN ? AND ?", tab, parts[i], ind);
+		snprintf(sql,sizeof(sql),"SELECT ogc_fid, %s FROM %s_part_%d WHERE %s BETWEEN ? AND ?",col,tab, parts[i], ind);
 		sqlite3_prepare_v2(db,sql,-1,&get_stmt,NULL);
 		sqlite3_bind_int(get_stmt,1,part_ranges->ranges[i]->start);
 		sqlite3_bind_int(get_stmt,2,part_ranges->ranges[i]->end);
@@ -436,11 +559,8 @@ double beter2(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, 
 	}
 
 	return (double)found/(double)total;
-	
-       		
-
-
 }
+
 void beter(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, double rad, int lim, rule *base, int verbose, int ind_depth){
 	///this seems to be about twice as fast as the other method
 	///i don't know why

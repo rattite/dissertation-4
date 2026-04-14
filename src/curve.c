@@ -159,7 +159,7 @@ rangelist *get_ranges_2(bbox *b, rule *r, int prec){
 	intbbox *world = create_large(prec);
 	//printf("%d %d\n", world->min_x, world->max_x);
 	//now we call the gr function
-	gr(q,world,r,prec,0,rl,0,(1<<(prec-1))); //this is recursive, so we need only call it once
+	gr(q,world,r,prec,0,rl,0,(1<<(prec-1))+(1<<(prec-2))); //this is recursive, so we need only call it once
 	//HOPEFULLY it should come out sorted
 	//
 	//for (int i=0;i<rl->len;i++){

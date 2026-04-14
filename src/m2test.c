@@ -32,11 +32,13 @@ int main(int argc, char *argv[]){
 
 		partition_help(db,"large","cent","q",n,r,"partname",4);
 		sqlite3_exec(db, "SELECT UpdateLayerStatistics()",NULL,NULL,NULL);
+		for (int i=0;i<4;i++){
     		clock_gettime(CLOCK_MONOTONIC, &start);
 		range_wrapper_help(db,"large","cent","q",-460000,6625000,20000,100000,n,r,"partname",4);
     		clock_gettime(CLOCK_MONOTONIC, &end);
     		double elapsed = (end.tv_sec - start.tv_sec) +(end.tv_nsec - start.tv_nsec) / 1e9;
 		printf("clock strikes 12 midnight arrives %.9f seconds\n", elapsed);
+		}
 		sqlite3_close(db);
 
 	}
