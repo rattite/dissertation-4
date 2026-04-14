@@ -89,7 +89,7 @@ double make_range_with_index(sqlite3 *db, char *tab, char *col, char *ind, doubl
 
 
 
-	char s3[1024];
+	char s3[102400];
 	sqlite3_stmt *stmt_2;
 	int found = 0;
 	char tmp[256];
@@ -237,9 +237,9 @@ void add_index(sqlite3 *db, char *tab, char *col, rule *base, char *name, int de
 	    //printf("c is %f %f\n", c->x, c->y);
 
 	    normalise(c,b);
-	    //printf("c is %f %f\n", c->x, c->y);
 	    gaiaFreeGeomColl(geom);
 	    index = get_index(c,base,depth); //TODO: change up how precision is calculated
+	//printf("%d\n", index);
 	    if(sqlite3_bind_int(add_stmt,1,index)!=SQLITE_OK){printf("err2: %s\n", sqlite3_errmsg(db));}
 	    if(sqlite3_bind_int(add_stmt,2,id)!=SQLITE_OK){printf("err2: %s\n", sqlite3_errmsg(db));}
 	    //this line specifically is giving errors

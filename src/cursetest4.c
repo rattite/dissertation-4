@@ -19,8 +19,8 @@ rangelist *getr2(bbox *b, rule *r, int prec, int tolerance){
 	//for (int i=0;i<rl->len;i++){
 	//	printf("range is %d %d\n", rl->ranges[i]->start, rl->ranges[i]->end);
 	//}
-	range **temp = realloc(rl->ranges, rl->len * sizeof(range *));
-	rl->ranges = temp;
+	//range **temp = realloc(rl->ranges, rl->len * sizeof(range *));
+	//rl->ranges = temp;
 	//printf("len is %d\n", rl->len);
 	free(q);
 	free(world);
@@ -28,7 +28,7 @@ rangelist *getr2(bbox *b, rule *r, int prec, int tolerance){
 
 }
 double make_range_with_index3(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, double rad, int lim, rule *base, int verbose, int ind_depth, int tolerance, int *rangenum);
-double make_range_with_index3(sqlite3 *db, char *dtab, char *col, char *ind, double x, double y, double rad, int lim, rule *base, int verbose, int ind_depth, int tolerance, int *rangenum){
+double make_range_with_index3(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, double rad, int lim, rule *base, int verbose, int ind_depth, int tolerance, int *rangenum){
 	//Makes a GOOD range query on a particular table. 
 	point *p = malloc(sizeof(point));
 	p->x = x;
@@ -57,6 +57,7 @@ double make_range_with_index3(sqlite3 *db, char *dtab, char *col, char *ind, dou
 	//start = clock();
 	rangelist *rl = getr2(b,base,ind_depth,tolerance); 
 	*rangenum = rl->len;
+	printf("help %d\n", *rangenum);
 	if (rl->len == 0){
 		printf("debug: box is %f %f %f %f\n", b->min_x, b->min_y, b->max_x, b->max_y);
 		printf("debug: centre is %f %f\n", p->x, p->y);
@@ -69,7 +70,7 @@ double make_range_with_index3(sqlite3 *db, char *dtab, char *col, char *ind, dou
 
 
 
-	char s3[1024];
+	char s3[102400];
 	sqlite3_stmt *stmt_2;
 	int found = 0;
 	char tmp[256];
@@ -79,7 +80,7 @@ double make_range_with_index3(sqlite3 *db, char *dtab, char *col, char *ind, dou
 		strcat(s3,tmp);
 	}
 	//printf("%s\n", s3);
-	if(sqlite3_prepare_v2(db,s3,-1,&stmt_2,NULL)!=SQLITE_OK){printf("err4:%s\n", sqlite3_errmsg(db));}
+	if(sqlite3_prepare_v2(db,s3,-1,&stmt_2,NULL)!=SQLITE_OK){printf("err43:%s\n", sqlite3_errmsg(db));}
 	sqlite3_bind_double(stmt_2,1,x);
 	sqlite3_bind_double(stmt_2,2,y);
 	sqlite3_bind_double(stmt_2,3,rad);
@@ -134,44 +135,47 @@ int main(int argc, char *argv[]){
 	int qnum = 0;
 	query **q = read_queries_from_file(n3,&qnum);
 	printf("got queries\n");
+	printf("queries are %d\n", qnum);
 	int rangenum = 0;
-	char indname[64];
+	char indname[128];
 	int xp = 0;
 	sqlite3 *db = setup_db(n2);
 	printf("opened!\n");
-	char *help = argv[1];
-	char *help2 = "cent";
 	int depth = atoi(argv[2]);
 	int curve = atoi(argv[3]);
-			snprintf(indname,sizeof(indname),"ind_%d_%d",depth,curve);
-			printf("%s\n", indname);
-			add_index(db,argv[1],help2,s[curve],indname,depth);
-			printf("add index\n");
-			for (int i=0;i<2;i++){
-				double tt=0;
-				double th=0;
-				double tc=0;
-				xp =i * pow(2,depth/2);
-				if (xp == 0){xp=1;}
-				//now for each query
-				for (int j=0;j<5;j++){
-					clock_gettime(CLOCK_MONOTONIC, &start);
-					double ret = make_range_with_index3(db,help,help2,indname,q[j]->x,q[j]->y,q[j]->rad,100000,s[curve],0,depth,xp,&rangenum);
-					clock_gettime(CLOCK_MONOTONIC, &end);
-					double elapsed = (end.tv_sec - start.tv_sec) +(end.tv_nsec - start.tv_nsec) / 1e9;
-					tt = tt + elapsed;
-					if (ret > 0){
-						th = th + ret;
-						tc++;
-					}
-				}
-				tt = tt/tc;
-				th = th/tc;
-
-
-				fprintf(ext,"%s,%d,%d,%f,%f\n",a[curve],depth,xp,tt,th);
+	snprintf(indname,sizeof(indname),"ind_%d_%d",dep[depth],curve);
+	printf("%s\n", indname);
+	//this seems to work!
+	add_index(db,argv[1],"cent",s[curve],indname,dep[depth]);
+	printf("add index\n");
+	for (int i=0;i<2;i++){
+		//tung tung tung sahur
+		double tt=0;
+		double th=0;
+		double tc=0;
+		xp =i * pow(2,dep[depth]/2);
+		if (xp == 0){xp=1;}
+		//now for each query
+		for (int j=0;j<5;j++){
+			clock_gettime(CLOCK_MONOTONIC, &start);
+			double ret = make_range_with_index3(db,argv[1],"cent",indname,q[j]->x,q[j]->y,q[j]->rad,100000,s[curve],0,dep[depth],xp,&rangenum);
+			clock_gettime(CLOCK_MONOTONIC, &end);
+			double elapsed = (end.tv_sec - start.tv_sec) +(end.tv_nsec - start.tv_nsec) / 1e9;
+			tt = tt + elapsed;
+			if (ret > 0){
+				th = th + ret;
+				tc++;
 			}
-			fflush(ext);
+		}
+		if (tc > 0){
+		tt = tt/tc;
+		th = th/tc;
+		}
+
+
+		fprintf(ext,"%s,%d,%d,%f,%f\n",a[curve],dep[depth],xp,tt,th);
+	}
+	fflush(ext);
 	sqlite3_close(db);
 	fclose(ext);
 	printf("completed!\n");

@@ -3,6 +3,7 @@ import warnings
 import sys
 from itertools import cycle, islice
 import matplotlib.patches as patches
+import math
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -52,8 +53,10 @@ def test_clustering(sub):
 # ============
     #dbscan = cluster.DBSCAN(eps=0.15,min_samples=30)
     #nyc
-    dbscan = cluster.DBSCAN(eps=0.15,min_samples=30)
-    #dbscan = cluster.HDBSCAN(min_cluster_size=20,min_samples=64,cluster_selection_epsilon=0.12,cluster_selection_method="eom",allow_single_cluster=True)
+    #dbscan = cluster.DBSCAN(eps=0.14,min_samples=32)
+    #for large:
+    dbscan = cluster.DBSCAN(eps=0.1, min_samples=20)
+    #dbscan = cluster.HDBSCAN(min_cluster_size=24,min_samples=16,cluster_selection_method="eom",allow_single_cluster=True)
     clustering_algorithms = (
         ("HDBSCAN", dbscan),
     )
@@ -120,7 +123,7 @@ def process_clusters(points, labels,sizes):
     size = len(points)
     indices = []
     for i in range(0,len(sizes)):
-        if sizes[i] > size / 64:
+        if sizes[i] > size / 9001:
             indices.append(i)
     print("indices are:",indices)
     return indices
@@ -133,6 +136,7 @@ def intersect(c1:list[float],c2:list[float]):
     y2 = min(c2[3], c1[3])
     if x1 <= x2 and y1 <= y2:
         return [x1, y1, x2, y2]
+    return None
     
     return [0,0,0,0]
 def merge_bboxes(b1, b2):
@@ -142,16 +146,38 @@ def merge_bboxes(b1, b2):
     y_max = max(b1[3], b2[3])
     return [x_min,y_min,x_max,y_max]
 
-    
+def fix_bboxes(b1, b2):
+    b1 = b1.copy()
+    b2 = b2.copy()
+    eu1 = math.sqrt((b1[2] - b1[0])**2 + (b1[3] - b1[1])**2)
+    eu2 = math.sqrt((b2[2] - b2[0])**2 + (b2[3] - b2[1])**2)
+    if eu1 > eu2:
+        s1, s2 = b2, b1
+        swapped = True
+    else:
+        s1, s2 = b1, b2
+        swapped = False
+    if s1[2] > s2[0] and s1[0] < s2[2]:
+        if abs(s1[2] - s2[0]) < abs(s2[2] - s1[0]):
+            s1[2] = s2[0] - 100
+        else:
+            s1[0] = s2[2] + 100
+    if s1[3] > s2[1] and s1[1] < s2[3]:
+        if abs(s1[3] - s2[1]) < abs(s2[3] - s1[1]):
+            s1[3] = s2[1] - 100
+        else:
+            s1[1] = s2[3] + 100
 
-    return [x_min, y_min, x_max, y_max] 
+    return (s2, s1) if swapped else (s1, s2)
+
 def intersect(b1, b2):
     return not (b1[2] < b2[0] or b1[0] > b2[2] or b1[3] < b2[1] or b1[1] > b2[3])
-
+"""
 def merge_clusters(clusters):
     if not clusters:
         return []
     changed = True
+    changes = {}
     while changed:
         changed = False
         results = []
@@ -161,7 +187,6 @@ def merge_clusters(clusters):
             
             for i in range(len(results)):
                 if intersect(current, results[i]):
-                    results[i] = merge_bboxes(current, results[i])
                     has_intersected = True
                     changed = True
                     break
@@ -171,6 +196,35 @@ def merge_clusters(clusters):
         clusters = results
         
     return clusters
+"""
+
+def merge_clusters(clusters):
+    print(len(clusters))
+    for i in range(len(clusters)):
+        for j in range(len(clusters)):
+            if intersect(clusters[i],clusters[j]):
+                print("hit!")
+                clusters[i],clusters[j] = fix_bboxes(clusters[i],clusters[j])
+    print(len(clusters))
+    return clusters
+
+def test_clusters(clusters):
+    if not clusters:
+        return []
+    has_intersected = False
+        
+    for i in range(len(clusters)):
+        for j in range(len(clusters)):
+            if i != j and intersect(clusters[j], clusters[i]):
+                has_intersected = True
+                break
+
+    if has_intersected:
+        print("warning! box intersection will cause errors")
+    
+        
+    return clusters
+
 
 def compute_bboxes(points, labels, clusters_to_use):
     ##TODO: merge clusters that have overlapping bboxes
@@ -212,11 +266,11 @@ def graph_clusters(points, labels,bboxes, shapefile=None):
         #scol = (14/16, 255/256, 14/16)
         scol = "palegoldenrod"
         region.plot(ax=ax, color=scol, edgecolor="black")
-    ax.scatter(points[:, 0], points[:, 1], s=12, color=colors[labels])
+    ax.scatter(points[:, 0], points[:, 1], s=12, color=colors[labels%8])
 
     for b in bboxes:
         print(b)
-        rectangle = patches.Rectangle((b[0], b[1]), b[2]-b[0], b[3]-b[1], linewidth=6, edgecolor='sienna', fill=False)
+        rectangle = patches.Rectangle((b[0], b[1]), b[2]-b[0], b[3]-b[1], linewidth=6, edgecolor='red', fill=False)
         ax.add_patch(rectangle)
     fig.savefig("img/clus_"+str(int(time.time()))+".png",bbox_inches="tight",dpi=300)
     #plt.show()
@@ -237,8 +291,9 @@ def clustering(filename,shapefile=None):
     sizes = get_cluster_sizes(sub,labels)
     clusters_to_use = process_clusters(sub, labels,sizes)
     bboxes = compute_bboxes(sub,labels,clusters_to_use)
-    #if len(bboxes) > 1:
-     #   bboxes = merge_clusters(bboxes)
+    if len(bboxes) > 1:
+        bboxes = merge_clusters(bboxes)
+    test_clusters(bboxes)
     graph_clusters(sub,labels,bboxes,shapefile)
     print("there are: " + str(len(bboxes)))
     a = filename.split(".")[0]

@@ -64,8 +64,7 @@ int main(int arcg, char *argv[]){
 	double world_y = world->max_y - world->min_y;
 	double grid_x = world_x / len_x;
 	double grid_y = world_y / len_y;
-	double diag = sqrt(world_x*world_x+world_y*world_y);
-	//opens output file
+	double diag = sqrt(world_x*world_y);
 	FILE *fil = fopen(argv[8],"w");
 	float f;
 	int lim;
@@ -75,9 +74,8 @@ int main(int arcg, char *argv[]){
 	double rad;
 	int cell_x;
 	int cell_y;
-	int min_rad = 2500;
-	int max_rad = 20 * min_rad;
-	//generates queries
+	double min_rad = (0.0625 * pow(diag,0.625));
+	double max_rad = 0.225 * pow(diag,0.875);	//generates queries
 	for (int i=0;i<no;i++){
 		count = 0;
 		f = ((float)rand())/RAND_MAX;
@@ -97,7 +95,7 @@ int main(int arcg, char *argv[]){
 		f = ((float)rand())/RAND_MAX;
 		q_y = (world->min_y + (grid_y*cell_y)+f*grid_y);
 		f = ((float)rand())/RAND_MAX;
-		rad = min_rad + 9*min_rad*f;
+		rad = min_rad + ((max_rad-min_rad)*f);
 		fprintf(fil,"%.0f\n%.0f\n%.0f\n", q_x,q_y,rad);
 	}
 	fclose(fil);

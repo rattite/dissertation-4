@@ -24,7 +24,7 @@ int main(int argc, char *argv[]){
 	//current investigation: it seems as if similar index values are being returned, but the right points aren't being put in those values!
 	
 	if (argc == 1){
-		sqlite3 *db = setup_db("large.sqlite");
+		sqlite3 *db = setup_db("data/large.sqlite");
 
 		point **p = sample_random_points_from_table(db,"large","cent",4096);
 		bbox *world = get_db_boundaries(db,"large","cent");
@@ -32,7 +32,7 @@ int main(int argc, char *argv[]){
 
 		int count = 0;
 		int bnum = 0;
-		bbox **clusters = read_bboxes_from_file("test.lizard",&bnum);
+		bbox **clusters = read_bboxes_from_file("data/large.lizard",&bnum);
 		printf("bnum is %d\n", bnum);
 		Node2 **n = make_trees(p,4096,world,clusters,bnum,128,64);
 		partition_through_multiple_trees(db,"large","cent","q",n,"method3",bnum,r,4,3);
@@ -56,7 +56,7 @@ int main(int argc, char *argv[]){
 		}
 		printf("going!\n");
 		fclose(test);
-		FILE *extra_stream = fopen("lizard.results","w");
+		FILE *extra_stream = fopen("data/large/lizard.results","w");
 		if (argc == 10){
 		}
 

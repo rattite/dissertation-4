@@ -22,7 +22,7 @@ int main(int argc, char *argv[]){
 	//current investigation: it seems as if similar index values are being returned, but the right points aren't being put in those values!
 
 	if (argc == 1){
-		sqlite3 *db = setup_db("large.sqlite");
+		sqlite3 *db = setup_db("data/large.sqlite");
 
 		point **p = sample_random_points_from_table(db,"large","cent",4096);
 		bbox *world = get_db_boundaries(db,"large","cent");
@@ -43,7 +43,7 @@ int main(int argc, char *argv[]){
 	else{
 		sqlite3 *db = setup_db(argv[1]);
 		sqlite3_exec(db, "SELECT UpdateLayerStatistics()",NULL,NULL,NULL);
-		FILE *extra_stream = fopen("lizard.results","w");
+		FILE *extra_stream = fopen("data/large/lizard.results","w");
 
 		//gets queries
 		int qnum = 0;

@@ -69,7 +69,7 @@ double make_range_with_index3(sqlite3 *db, char *tab, char *col, char *ind, doub
 
 
 
-	char s3[1024];
+	char s3[102400];
 	sqlite3_stmt *stmt_2;
 	int found = 0;
 	char tmp[256];
@@ -102,7 +102,9 @@ double make_range_with_index3(sqlite3 *db, char *tab, char *col, char *ind, doub
 	}
 	sqlite3_finalize(stmt_2);
 	free_rangelist(rl);
+	if (verbose == 0){
 	printf("points found: %d\n", found);
+	}
 	sqlite3_exec(db, "DELETE FROM candidates", NULL, NULL, NULL);
 	//end = clock();
 	//printf("time taken to execute query: %f\n",(double)(end-start)/CLOCKS_PER_SEC);
@@ -128,7 +130,7 @@ int main(int argc, char *argv[]){
 	snprintf(n3,sizeof(n3),"data/%s.queries",argv[1]);
 	printf("%s,%s,%s\n", name,n2,n3);
 	printf("ok!\n");
-	int dep[] = {4,6,8,10};
+	int dep[] = {4,6,8,10,12};
 	FILE *ext = fopen(name,"w");
 	int qnum = 0;
 	query **q = read_queries_from_file(n3,&qnum);
@@ -143,35 +145,39 @@ int main(int argc, char *argv[]){
 
 	//curve,depth,tolerance
 	for (int g=0;g<2;g++){
-		for (int h=0;h<3;h++){
-			snprintf(indname,sizeof(indname),"ind_%d_%d",g,h);
+		for (int h=0;h<4;h++){
+			snprintf(indname,sizeof(indname),"ind_%s_%d",a[g],dep[h]);
 			printf("%s\n", indname);
 			add_index(db,argv[1],help2,s[g],indname,dep[h]);
-			printf("add index\n");
-			for (int i=0;i<2;i++){
+			//printf("add index\n");
+			for (int i=0;i<32;i++){
 				double tt=0;
 				double th=0;
 				double tc=0;
-				xp =i * pow(2,dep[h]/2);
+				double tr=0;
+				xp =i * (pow(2,dep[h])/16);
 				if (xp == 0){xp=1;}
 				//now for each query
-				for (int j=0;j<5;j++){
+				for (int j=0;j<qnum;j++){
 					clock_gettime(CLOCK_MONOTONIC, &start);
-					double ret = make_range_with_index3(db,help,help2,indname,q[j]->x,q[j]->y,q[j]->rad,100000,s[g],0,dep[h],xp,&rangenum);
+					double ret = make_range_with_index3(db,help,help2,indname,q[j]->x,q[j]->y,q[j]->rad,100000,s[g],1,dep[h],xp,&rangenum);
 					clock_gettime(CLOCK_MONOTONIC, &end);
 					double elapsed = (end.tv_sec - start.tv_sec) +(end.tv_nsec - start.tv_nsec) / 1e9;
 					tt = tt + elapsed;
 					if (ret > 0){
 						th = th + ret;
 						tc++;
+						tr = tr + rangenum;
 					}
 				}
 				tt = tt/tc;
 				th = th/tc;
+				tr = tr/tc;
 
 
-				fprintf(ext,"%s,%d,%d,%f,%f\n",a[g],dep[h],xp,tt,th);
+				fprintf(ext,"%s,%d,%d,%f,%f,%f\n",a[g],dep[h],xp,tr,tt,th);
 			}
+			fprintf(ext,"\n");
 			fflush(ext);
 		}
 	}

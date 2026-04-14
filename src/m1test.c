@@ -59,7 +59,7 @@ int main(int argc, char *argv[]){
 
 		//shuts down index
 		remove_index_col(db,"large","arg1");
-		destroy_part_structure(db,"large",64);
+	//destroy_part_structure(db,"large",64);
 		sqlite3_close(db);
 
 	} else{

@@ -94,7 +94,7 @@ class test_case(BaseEstimator):
         return {}
     def fit(self, X=None, y=None):
         runs = []
-        for _ in range(4):
+        for _ in range(3):
             self.run(**X)
             runs.append(self.times[-1])
 
@@ -179,6 +179,7 @@ class test_case(BaseEstimator):
 
     def run(self,filename:str, tab:str, col:str, queries_file:str):
         p1 = subprocess.run(["bin/reset",filename,tab])
+        vacuum(filename)
         process = self.subp(filename,tab,col,queries_file)
         process.wait()
         self.set_results()
@@ -262,6 +263,7 @@ class m3_case(test_case):
         return subprocess.Popen(["bin/m3test",filename,tab,col,queries_file,clus,self.b_min,self.b_dep,self.c_min,self.c_dep])
     def run(self,filename:str, tab:str, col:str, queries_file:str,clus:str):
         p1 = subprocess.run(["bin/reset",filename,tab])
+        vacuum(filename)
         process = self.subp(filename,tab,col,queries_file,clus)
         process.wait()
         self.set_results()
@@ -402,7 +404,24 @@ def graph_separate(cases:list[test_case],dim):
 #
 #
 #
+def vacuum(filename:str):
+    con = sqlite3.connect(filename)
+    cur = con.cursor()
+    res = cur.execute("VACUUM;")
+    con.close()
 
+def get_count(filename:str):
+    con = sqlite3.connect(filename)
+    cur = con.cursor()
+    res = cur.execute("SELECT COUNT(*) FROM geometry_columns")
+    ret = res.fetchone()
+    r = -1
+    try:
+        r = int(ret[0])-2
+    except Exception as e:
+        print(e)
+    con.close()
+    return r
 
 
 
@@ -437,21 +456,23 @@ def test_if_clusters(filename):
 
 #TODO: optimise for the main dataset, then refine!
 def othertest(name,flag,reps,cases=None):
+    print(name)
+    time.sleep(3)
     #we can put parameters here manually, if we so wish
 
 
     qname = "data/"+name
     f2 = False
-    if test_if_clusters("data"+name+".lizard") > 0:
+    if test_if_clusters(qname+".lizard") > 0:
         f2 = True
     if flag == 0:
         query.generate_query_set(qname+".sqlite",name,"cent",200,32,32,4096,qname+".queries")
     else:
-        query.generate_clus_query_set(qname+".sqlite",name,"cent",200,"data"+name+"lizard",qname+".queries")
+        query.generate_clus_query_set(qname+".sqlite",name,"cent",200,qname+".lizard",qname+".queries")
 
     
     X = {"filename": qname + ".sqlite","tab": name,"col": "cent","queries_file": qname + ".queries"}
-    X1 = {"filename": qname + ".sqlite","tab": name,"col": "cent","queries_file": qname + ".queries", "clus": qname+"lizard"}
+    X1 = {"filename": qname + ".sqlite","tab": name,"col": "cent","queries_file": qname + ".queries", "clus": qname+".lizard"}
 
     pat = Path("data/"+name)
     pat2 = Path("img/"+name)
@@ -472,18 +493,25 @@ def othertest(name,flag,reps,cases=None):
         cases.append(m1_case(8,32))
         cases.append(m2_case(4,64))
 
-    if f2 == True:
-        m3c = m3_case(128,128,4,4)
-        for i in range(reps):
-             m3c.run(qname+".sqlite",name,"cent",qname+".queries",qname+".lizard")
+        if f2 == True:
+            m3c = m3_case(128,128,4,4)
+            for i in range(reps):
+                 m3c.run(qname+".sqlite",name,"cent",qname+".queries",qname+".lizard")
 
-    for case in cases:
-        for i in range(reps):
-            case.run(qname+".sqlite",name,"cent",qname+".queries")
+        for case in cases:
+            for i in range(reps):
+                case.run(qname+".sqlite",name,"cent",qname+".queries")
 
-    if f2 == True:
-        cases.append(m3c)
-    test_case.serialise_list("data/"+name+"/"+str(time.time())+"_"+str(flag)+".best",cases)
+        if f2 == True:
+            cases.append(m3c)
+    else:
+        for case in cases:
+            for i in range(reps):
+                if isinstance(case,m3_case):
+                    case.run(qname+".sqlite",name,"cent",qname+".queries",qname+".lizard")
+                else:
+                    case.run(qname+".sqlite",name,"cent",qname+".queries")
+    test_case.serialise_list("data/"+name+"/"+str(time.time())+"_"+str(flag)+".best2",cases)
 
 
     graph_final_results(cases,name,1,flag)
@@ -491,6 +519,7 @@ def othertest(name,flag,reps,cases=None):
 
 
 def rt(name,flag,reps):
+
 
 
     qname = "data/"+name
@@ -532,7 +561,7 @@ def rt(name,flag,reps):
     cases.append(besti)
     test_case.serialise_list("data/"+name+"/"+str(time.time())+"_"+str(flag)+".allind", alli)
     graph_final_results(alli,name,0,flag)
-
+    """
     best1, all1 = m1_case.optimise(X)
     cases.append(best1)
     test_case.serialise_list("data/"+name+"/"+str(time.time())+"_"+str(flag)+".all1", all1)
@@ -548,45 +577,68 @@ def rt(name,flag,reps):
         graph_final_results(all3,name,0,flag)
         for i in range(reps):
              best3.run(qname+".sqlite",name,"cent",qname+".queries",qname+".lizard")
-
+    """
     for case in cases:
         for i in range(reps):
             case.run(qname+".sqlite",name,"cent",qname+".queries")
-
+    """
     if f2 == True:
         cases.append(best3)
-
+    """
     test_case.serialise_list("data/"+name+"/"+str(time.time())+"_"+str(flag)+".best",cases)
 
 
     graph_final_results(cases,name,1,flag)
     return cases
 
+def test_size(name):
+    qname = "data/"+name
 
+    vacuum(qname+".sqlite")
+    sizes = []
+    cases = []
+    sizes.append(os.path.getsize(qname+".sqlite"))
+    nums = [0]
+    cases.append(m1_case(6,16))
+    cases.append(m1_case(6,32))
+    cases.append(m1_case(6,16))
+    cases.append(m2_case(4,64))
+    cases.append(m2_case(4,256))
+    cases.append(m3_case(64,64,4,4))
+    cases.append(m3_case(128,64,4,4))
+    cases.append(m3_case(256,64,4,4))
+    cases.append(m3_case(64,128,4,4))
+    cases.append(m3_case(128,128,4,4))
+    cases.append(m3_case(256,128,4,4))
+    cases.append(m3_case(64,256,4,4))
+    cases.append(m3_case(128,256,4,4))
+    cases.append(m3_case(256,256,4,4))
+    for case in cases:
+        if isinstance(case,m3_case):
+            case.run(qname+".sqlite",name,"cent",qname+".queries",qname+".lizard")
+        else:
+            case.run(qname+".sqlite",name,"cent",qname+".queries")
+        sizes.append(os.path.getsize(qname+".sqlite"))
+        nums.append(get_count(qname+".sqlite"))
+    print(sizes)
+    print(nums)
+                 
+
+
+
+def tunerun(tune,whole,reps):
+    ca = rt(tune,0,0)
+    time.sleep(5)
+    othertest(whole,0,reps,ca)
+    time.sleep(5)
+    cb = rt(tune,1,0)
+    othertest(whole,1,reps,cb)
+    time.sleep(5)
 
 if __name__ == "__main__":
-
-
-
-    #this is the stuff that we vary for each test we want to run
-
-    """
-    rt(sys.argv[1],0,int(sys.argv[2]),f2)
-    time.sleep(5)
-    rt(sys.argv[1],1,int(sys.argv[2]),f2)
-    time.sleep(5)
-    """
-    prefix = "_10000"
-    if (sys.argv[1] == "stops"):
-        prefix = "_0"
-    ca = rt(sys.argv[1]+prefix,0,int(sys.argv[2]))
-    time.sleep(5)
-    othertest(sys.argv[1],0,6,ca)
-    time.sleep(5)
-    cb = rt(sys.argv[1]+prefix,1,int(sys.argv[2]))
-    time.sleep(5)
-    othertest(sys.argv[1],1,6,cb)
-    time.sleep(5)
+    #test_size("large")
+    rt("stops",1,6)
+    #tunerun(sys.argv[1],sys.argv[2],int(sys.argv[3]))
     #sends a desktop notification so i can see when the script finishes
     try:
         subprocess.run(["notify-send", "-u", "critical", "ACTION REQUIRED: GRADUATION", "COMPLETED!"], check=True)

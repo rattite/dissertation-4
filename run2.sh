@@ -1,5 +1,4 @@
 while true; do
-	python run_tests.py nyc 0
-	python run_tests.py marten 0
-	python run_test.py stops 0
+	python run_tests.py nyc_10000 nyc 12
+	sleep 10
 done
