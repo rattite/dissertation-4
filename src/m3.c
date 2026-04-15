@@ -105,7 +105,6 @@ void partition_through_multiple_trees(sqlite3 *db, char *tab, char *col, char *i
 }
 void range_4_help_3(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, double rad, bbox *query, int *found, int *checked, Node2 *n, rule *base, char *partname, int c_count, bbox **clusters, int partno, int ind_depth){
 	//if we've found too many points
-	if (*found < 0){return;}
 	//if the query area doesn't interesect the node
 	bbox *intersect = get_intersect_help(query,n->boundaries);
 	if (intersect == NULL){return;}
@@ -139,6 +138,7 @@ void range_4_help_3(sqlite3 *db, char *tab, char *col, char *ind, double x, doub
 			snprintf(s2,sizeof(s2),"SELECT ogc_fid, %s FROM %s","geom", name); //TODO: this is hardcoded!
 			if(sqlite3_prepare_v2(db,s2,-1,&sel_stmt,NULL)!=SQLITE_OK){printf("err99: %s\n", sqlite3_errmsg(db));}
 			while (sqlite3_step(sel_stmt) == SQLITE_ROW){
+				(*checked)++;
 	    			const void *blob = sqlite3_column_blob(sel_stmt, 1);
 	    			int blob_size = sqlite3_column_bytes(sel_stmt, 1);
 	    			gaiaGeomCollPtr geom = gaiaFromSpatiaLiteBlobWkb(blob, blob_size);

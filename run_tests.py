@@ -486,12 +486,12 @@ def othertest(name,flag,reps,cases=None):
         print("this is bad")
     if cases == None:
         cases = []
-        cases.append(naive_case())
-        cases.append(good_case())
-        cases.append(index_case(8,0))
-        cases.append(m1_case(6,32))
-        cases.append(m1_case(8,32))
-        cases.append(m2_case(4,64))
+        #cases.append(naive_case())
+        #cases.append(good_case())
+        #cases.append(index_case(8,0))
+        #cases.append(m1_case(6,32))
+        #cases.append(m1_case(8,32))
+        cases.append(m2_case(4,256))
 
         if f2 == True:
             m3c = m3_case(128,128,4,4)
@@ -620,7 +620,8 @@ def test_size(name):
     print(sizes)
     print(nums)
                  
-
+def trial(name):
+    othertest(name,0,1)
 
 
 def tunerun(tune,whole,reps):
@@ -635,7 +636,8 @@ def tunerun(tune,whole,reps):
 if __name__ == "__main__":
     #test_size("large")
     #rt("stops",1,6)
-    tunerun(sys.argv[1],sys.argv[2],int(sys.argv[3]))
+    #tunerun(sys.argv[1],sys.argv[2],int(sys.argv[3]))
+    trial(sys.argv[1])
     #sends a desktop notification so i can see when the script finishes
     try:
         subprocess.run(["notify-send", "-u", "critical", "ACTION REQUIRED: GRADUATION", "COMPLETED!"], check=True)

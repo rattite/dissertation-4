@@ -41,9 +41,8 @@ void free_rule(rule *r){
 }
 
 void print_ibb(intbbox *a){
-	printf("ib is x: %d %d y: %d %d\n", a->min_x, a->max_x, a->min_y, a->max_y);
+	printf("x: %d %d y: %d %d\n", a->min_x, a->max_x, a->min_y, a->max_y);
 }
-int ibis(intbbox *a, intbbox *b){
 	/* i like ibis
                                  .....
                             .e$$$$$$$$$$$$$$e.
@@ -82,19 +81,20 @@ F                            $$      4$
 	//a intersects b (excluding touching edges) - returns 1
 	//a and b have no relation - returns -1
 	//
+int ibis(intbbox *a, intbbox *b){
+
 	if (a->min_x <= b->min_x && a->min_y <= b->min_y && a->max_x >= b->max_x && a->max_y >= b->max_y){
 		return 0;
 	}
 
-	if (a->max_x <= b->min_x || a->max_y <= b->min_y || a->min_x >= b->max_x || a->min_y >= b->max_y){
+	if (a->max_x < b->min_x || a->max_y < b->min_y || a->min_x > b->max_x || a->min_y > b->max_y){
 		return -1;
 	}
 	return 1;
 }
+
 void gr(intbbox *query, intbbox *curr, rule *r, int prec, int depth, rangelist *rl, unsigned int start, int tolerance){
-	int ib = ibis(query,curr);
-	//print_ibb(query);
-	//print_ibb(curr);
+	int ib = ibis(query,curr); //checks whether they interesect
 	//printf("start is %d, depth is %d, ibis case is %d\n", start, depth,ib);
 	if (ib == -1){ //if there is no intersect at all!
 		return;
@@ -138,15 +138,18 @@ intbbox *unit_to_int(bbox *b, int prec){
 	i->min_y = (unsigned int)(b->min_y*pow(4,prec));
 	i->max_x = (unsigned int)(b->max_x*pow(4,prec));
 	i->max_y = (unsigned int)(b->max_y*pow(4,prec));
+	if (i->max_x == 256){i->max_x = 255;}
+	if (i->max_y == 256){i->max_y = 255;}
 	return i;
+
 }
 
 intbbox *create_large(int prec){
 	intbbox *i = malloc(sizeof(intbbox));
 	i->min_x = 0;
 	i->min_y = 0;
-	i->max_x = pow(4,prec)-1;
-	i->max_y = pow(4,prec)-1;
+	i->max_x = (1<<(2*prec))-1;
+	i->max_y = (1<<(2*prec))-1;
 	return i;
 }
 
@@ -155,20 +158,29 @@ rangelist *get_ranges_2(bbox *b, rule *r, int prec){
 	rl->ranges = malloc(100000*sizeof(range *)); //we will realloc this later!!!!
 	rl->len = 0;
 	intbbox *q = unit_to_int(b,prec);
+	printf("new query:\n");
+	print_ibb(q);
+
 	//printf("%d %d %d %d\n", q->min_x, q->min_y, q->max_x, q->max_y);
 	intbbox *world = create_large(prec);
 	//printf("%d %d\n", world->min_x, world->max_x);
 	//now we call the gr function
-	gr(q,world,r,prec,0,rl,0,(1<<(prec-1))+(1<<(prec-2))); //this is recursive, so we need only call it once
+	gr(q,world,r,prec,0,rl,0,(1<<(prec-1))); //this is recursive, so we need only call it once
 	//HOPEFULLY it should come out sorted
 	//
 	//for (int i=0;i<rl->len;i++){
 	//	printf("range is %d %d\n", rl->ranges[i]->start, rl->ranges[i]->end);
 	//}
+	if (rl->len == 0){
+		printf("b is %f %f %f %f\n", b->min_x, b->min_y, b->max_x, b->max_y);
+		printf("q is %d %d %d %d\n", q->min_x, q->min_y, q->max_x, q->max_y);
+		printf("wow this is hopeless\n");
+	}
 	range **temp = realloc(rl->ranges, rl->len * sizeof(range *));
 	rl->ranges = temp;
 	free(q);
 	free(world);
+	printf("\n\n\n\n\n\n\n");
 	return rl;
 
 }

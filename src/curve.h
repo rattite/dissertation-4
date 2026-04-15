@@ -48,7 +48,7 @@ typedef struct rangelist{
 	int len;
 }rangelist;
 
-void print_ibb(intbbox *a);
+void print_ibb(intbbox *i);
 int ibis(intbbox *a, intbbox *b);
 void gr(intbbox *query, intbbox *curr, rule *r, int prec, int depth, rangelist *rl, unsigned int start, int tolerance);
 intbbox *unit_to_int(bbox *b, int prec);

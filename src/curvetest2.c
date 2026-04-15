@@ -4,6 +4,8 @@
 
 
 int main(int argc, char *argv[]){
+
+	/*
 	struct timespec start, end;
 	rule *r = get_hilbert_curve();
 	bbox *b = gen_bbox(0,0.1,0.3,0.7);
@@ -32,4 +34,5 @@ int main(int argc, char *argv[]){
 
 	}
 	printf("done!\n");
+	*/
 }

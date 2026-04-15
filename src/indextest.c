@@ -16,7 +16,7 @@ int main(int argc, char *argv[]){
 	rule *r = get_hilbert_curve();
 
 	if (argc == 1){
-		sqlite3 *db = setup_db("large.sqlite");
+		sqlite3 *db = setup_db("data/large.sqlite");
 		//sqlite3_exec(db, "PRAGMA temp_store = MEMORY;", NULL, NULL, NULL);
 		//sqlite3_exec(db, "PRAGMA synchronous = OFF;", NULL, NULL, NULL);
 		//sets up index
