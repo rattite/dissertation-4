@@ -90,7 +90,7 @@ void partition_through_multiple_trees(sqlite3 *db, char *tab, char *col, char *i
 			start = n[cnum];
 			//gets the partition that we need!
 
-			index = get_help(start,c,&partnum,r,d);
+			index = get_index_node(start,c,&partnum,r,d);
 			snprintf(sql2,sizeof(sql2),"INSERT INTO %s_%s_%d_%d VALUES (?,?,?)",tab,partname,cnum,partnum);
 			if (sqlite3_prepare_v2(db,sql2,-1,&ins_stmt,NULL)!=SQLITE_OK){printf("err2: %s\n", sqlite3_errmsg(db));}
 			sqlite3_bind_int(ins_stmt,1,id);
@@ -104,8 +104,6 @@ void partition_through_multiple_trees(sqlite3 *db, char *tab, char *col, char *i
     	sqlite3_exec (db, sql, NULL, NULL, NULL);
 }
 void range_4_help_3(sqlite3 *db, char *tab, char *col, char *ind, double x, double y, double rad, bbox *query, int *found, int *checked, Node2 *n, rule *base, char *partname, int c_count, bbox **clusters, int partno, int ind_depth){
-	//if we've found too many points
-	//if the query area doesn't interesect the node
 	bbox *intersect = get_intersect_help(query,n->boundaries);
 	if (intersect == NULL){return;}
 	if (n->leaf != 1){
@@ -135,7 +133,7 @@ void range_4_help_3(sqlite3 *db, char *tab, char *col, char *ind, double x, doub
 		if (intersect->min_x == 0 && intersect->max_x == 1 && intersect->min_y == 0 && intersect->max_y == 1){
 			//if the entire partition is covered, then we get everything we can!
 			char s2[256];
-			snprintf(s2,sizeof(s2),"SELECT ogc_fid, %s FROM %s","geom", name); //TODO: this is hardcoded!
+			snprintf(s2,sizeof(s2),"SELECT ogc_fid, %s FROM %s",col, name); //TODO: this is hardcoded!
 			if(sqlite3_prepare_v2(db,s2,-1,&sel_stmt,NULL)!=SQLITE_OK){printf("err99: %s\n", sqlite3_errmsg(db));}
 			while (sqlite3_step(sel_stmt) == SQLITE_ROW){
 				(*checked)++;
@@ -155,36 +153,14 @@ void range_4_help_3(sqlite3 *db, char *tab, char *col, char *ind, double x, doub
 				}
 	} else{
 		rangelist *rl = get_ranges_2(intersect,base,ind_depth);
-		//printf("range 0: %d %d", rl->ranges[0]->start, rl->ranges[0]->end);
-		//creates temporary table
-		sqlite3_stmt *stmt_x;
-		char *s1 = "CREATE TEMP TABLE IF NOT EXISTS candidates(ogc_fid INTEGER PRIMARY KEY, ind INTEGER)";
-		if(sqlite3_exec(db,s1,NULL,NULL,NULL)!=SQLITE_OK){printf("error 101: %s\n",sqlite3_errmsg(db));}
-		char s2[256];
-		//prepares in:tsert statement
-		snprintf(s2,sizeof(s2),"INSERT OR IGNORE INTO candidates(ogc_fid,ind) SELECT ogc_fid, %s FROM %s WHERE %s BETWEEN ? AND ?",ind,name,ind);
-		//printf("name is %s\n", name);
-		if(sqlite3_prepare_v2(db,s2,-1,&stmt_x,NULL)!=SQLITE_OK){printf("err100: %s\n", sqlite3_errmsg(db));}
-		sqlite3_exec(db, "BEGIN", NULL, NULL, NULL);
-		//iterates over ranges and inserts for each range
-		for (int k=0;k<rl->len;k++){
-		sqlite3_bind_int(stmt_x,1,rl->ranges[k]->start);
-		sqlite3_bind_int(stmt_x,2,rl->ranges[k]->end);
-		sqlite3_step(stmt_x);
-		sqlite3_reset(stmt_x);
-		sqlite3_clear_bindings(stmt_x);
+		char s3[25600];
+		char tmp[256];
+		snprintf(s3, sizeof(s3), "SELECT %s, ogc_fid FROM %s WHERE (%s BETWEEN %d AND %d) ",col,name,ind,rl->ranges[0]->start, rl->ranges[0]->end);
+			for (int j=1;j<rl->len;j++){
+			snprintf(tmp,sizeof(tmp),"OR (%s BETWEEN %d AND %d) ", ind, rl->ranges[j]->start, rl->ranges[j]->end);
+			strcat(s3,tmp);
 		}
-	    	free_rangelist(rl);
-		free(intersect);
-		sqlite3_finalize(stmt_x);
-		sqlite3_exec(db, "COMMIT", NULL, NULL, NULL);
 
-
-
-
-	//start = clock();
-		char s3[256];
-      		snprintf(s3, sizeof(s3), "SELECT %s, ogc_fid FROM candidates c JOIN %s USING(ogc_fid)","geom",name);
 		if(sqlite3_prepare_v2(db,s3,-1,&sel_stmt,NULL)!=SQLITE_OK){printf("err4:%s\n", sqlite3_errmsg(db));}
 		//selects all points from candidates
 		while (sqlite3_step(sel_stmt) == SQLITE_ROW){

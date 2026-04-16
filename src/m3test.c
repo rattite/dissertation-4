@@ -38,7 +38,7 @@ int main(int argc, char *argv[]){
 		partition_through_multiple_trees(db,"large","cent","q",n,"method3",bnum,r,4,3);
 		sqlite3_exec(db, "SELECT UpdateLayerStatistics()",NULL,NULL,NULL);
     		clock_gettime(CLOCK_MONOTONIC, &start);
-		for (int i=0;i<4;i++){
+		for (int i=0;i<100;i++){
 		method_3_wrapper(db,"large","cent","q",-460000,6625000,20000,100000,n,r,"method3",bnum,4,3);
     		clock_gettime(CLOCK_MONOTONIC, &end);
     		double elapsed = (end.tv_sec - start.tv_sec) +(end.tv_nsec - start.tv_nsec) / 1e9;
@@ -57,7 +57,7 @@ int main(int argc, char *argv[]){
 		}
 		printf("going!\n");
 		fclose(test);
-		FILE *extra_stream = fopen("data/large/lizard.results","w");
+		FILE *extra_stream = fopen("lizard.results","w");
 		if (argc == 10){
 		}
 

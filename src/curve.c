@@ -155,17 +155,15 @@ intbbox *create_large(int prec){
 
 rangelist *get_ranges_2(bbox *b, rule *r, int prec){
 	rangelist *rl = malloc(sizeof(rangelist));
-	rl->ranges = malloc(100000*sizeof(range *)); //we will realloc this later!!!!
+	rl->ranges = malloc(1000*sizeof(range *)); //we will realloc this later!!!!
 	rl->len = 0;
 	intbbox *q = unit_to_int(b,prec);
-	printf("new query:\n");
-	print_ibb(q);
 
 	//printf("%d %d %d %d\n", q->min_x, q->min_y, q->max_x, q->max_y);
 	intbbox *world = create_large(prec);
 	//printf("%d %d\n", world->min_x, world->max_x);
 	//now we call the gr function
-	gr(q,world,r,prec,0,rl,0,(1<<(prec-1))); //this is recursive, so we need only call it once
+	gr(q,world,r,prec,0,rl,0,(1<<(prec-1)+1<<(prec-2))); //this is recursive, so we need only call it once
 	//HOPEFULLY it should come out sorted
 	//
 	//for (int i=0;i<rl->len;i++){
@@ -180,7 +178,6 @@ rangelist *get_ranges_2(bbox *b, rule *r, int prec){
 	rl->ranges = temp;
 	free(q);
 	free(world);
-	printf("\n\n\n\n\n\n\n");
 	return rl;
 
 }

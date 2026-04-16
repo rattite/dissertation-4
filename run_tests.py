@@ -94,7 +94,7 @@ class test_case(BaseEstimator):
         return {}
     def fit(self, X=None, y=None):
         runs = []
-        for _ in range(3):
+        for _ in range(1):
             self.run(**X)
             runs.append(self.times[-1])
 
@@ -210,7 +210,7 @@ class index_case(test_case):
         return "d="+self.ind_depth+self.curve
     @classmethod
     def get_param_grid(cls):
-        return {"ind_depth": [6,8], "curve":[0,1]}
+        return {"ind_depth": [4,6,8,10], "curve":[0,1]}
     def subp(self,filename:str, tab:str, col:str, queries_file:str):
         return subprocess.Popen(["bin/indextest",filename,tab,col,queries_file,self.ind_depth, self.curve])
 
@@ -222,7 +222,7 @@ class m1_case(test_case):
         self.label = "Index-Ranges"
     @classmethod
     def get_param_grid(cls):
-        return {"ind_depth": [6,8,10], "pnum": [16,32,64]}
+        return {"ind_depth": [6,8,10], "pnum": [16,32,64,128,255]}
 
     def gpl(self):
         return "d="+self.ind_depth+"\n, p="+self.pnum
@@ -241,7 +241,7 @@ class m2_case(test_case):
         self.label = "Grid"
     @classmethod
     def get_param_grid(cls):
-        return {"ind_depth": [4,6], "min_leaf": [64,256]}
+        return {"ind_depth": [4,6,8], "min_leaf": [4,64,256]}
     def subp(self,filename:str, tab:str, col:str, queries_file:str):
         return subprocess.Popen(["bin/m2test",filename,tab,col,queries_file,self.ind_depth,self.min_leaf])
 
@@ -258,7 +258,7 @@ class m3_case(test_case):
         self.label = "Grid+Clustering"
     @classmethod
     def get_param_grid(cls):
-        return {"b_min": [64,128,256], "c_min": [64,128,256],"b_dep":[4,6],"c_dep":[4,6]}
+        return {"b_min": [32,64,128,256], "c_min": [32,64,128,256],"b_dep":[4,6],"c_dep":[4,6]}
     def subp(self,filename:str, tab:str, col:str, queries_file:str,clus:str):
         return subprocess.Popen(["bin/m3test",filename,tab,col,queries_file,clus,self.b_min,self.b_dep,self.c_min,self.c_dep])
     def run(self,filename:str, tab:str, col:str, queries_file:str,clus:str):
@@ -489,7 +489,7 @@ def othertest(name,flag,reps,cases=None):
         #cases.append(naive_case())
         #cases.append(good_case())
         #cases.append(index_case(8,0))
-        #cases.append(m1_case(6,32))
+        cases.append(m1_case(6,32))
         #cases.append(m1_case(8,32))
         cases.append(m2_case(4,256))
 
@@ -527,7 +527,7 @@ def rt(name,flag,reps):
     f2 = False
     #if c > 0:
      #   f2 = True
-    if test_if_clusters("data/"+name+".lizard") > 0:
+    if test_if_clusters(qname+".lizard") > 0:
         f2 = True
 
     if flag == 0:
@@ -635,9 +635,10 @@ def tunerun(tune,whole,reps):
 
 if __name__ == "__main__":
     #test_size("large")
-    #rt("stops",1,6)
+    rt(sys.argv[1],0,8)
+    rt(sys.argv[1],1,8)
     #tunerun(sys.argv[1],sys.argv[2],int(sys.argv[3]))
-    trial(sys.argv[1])
+    #trial(sys.argv[1])
     #sends a desktop notification so i can see when the script finishes
     try:
         subprocess.run(["notify-send", "-u", "critical", "ACTION REQUIRED: GRADUATION", "COMPLETED!"], check=True)

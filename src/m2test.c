@@ -29,10 +29,12 @@ int main(int argc, char *argv[]){
 		print_bbox(world);
 		int count = 0;
 		Node2 *n = make_tree_2(p,4096,world,255,0,&count);
+		for (int i=0;i<4096;i++){free(p[i]);}
+		free(p);
 
 		partition_help(db,"large","cent","q",n,r,"partname",4);
 		sqlite3_exec(db, "SELECT UpdateLayerStatistics()",NULL,NULL,NULL);
-		for (int i=0;i<4;i++){
+		for (int i=0;i<100;i++){
     		clock_gettime(CLOCK_MONOTONIC, &start);
 		range_wrapper_help(db,"large","cent","q",-460000,6625000,20000,100000,n,r,"partname",4);
     		clock_gettime(CLOCK_MONOTONIC, &end);
@@ -45,7 +47,7 @@ int main(int argc, char *argv[]){
 	else{
 		sqlite3 *db = setup_db(argv[1]);
 		sqlite3_exec(db, "SELECT UpdateLayerStatistics()",NULL,NULL,NULL);
-		FILE *extra_stream = fopen("data/large/lizard.results","w");
+		FILE *extra_stream = fopen("lizard.results","w");
 
 		//gets queries
 		int qnum = 0;
@@ -60,6 +62,9 @@ int main(int argc, char *argv[]){
 		print_bbox(world);
 		int count = 0;
 		Node2 *n = make_tree_2(p,4096,world,minp,0,&count);
+		for (int i=0;i<4096;i++){free(p[i]);}
+		free(p);
+
 		partition_help(db,argv[2],argv[3],"q",n,r,"partname",depth);
 		sqlite3_exec(db, "SELECT UpdateLayerStatistics()",NULL,NULL,NULL);
 		for (int i=0;i<qnum;i++){

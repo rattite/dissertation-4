@@ -89,11 +89,15 @@
 25/3: data collecting (i've started running tests overnight to get the data in the morning)
 26/3: none
 27/3: none
-
-
-
-
-
-
+28/3: mass data preparation (stops, nyc datasets)
+29/3: more additions to testing framework
+6/4: 
+7/4: none
+8/4: ran tests on random and gaussian data
+9/4: created synthetic data with clustering
+10/4: away
+11/4: away
+12/4: away
+13/4: away
 14/4: writing report, logging storage usage
 15/4: logging memory usage, fixing methods 2 and 3

@@ -8,9 +8,11 @@ int main(int argc, char *argv[]){
 	//there are NO database files involved
 	//each test includes a database file, table, column, and a list of queries
 	//it would be best to get it with json or somethin
+	//argv 1,2,3: file,table,col
+	////4: query file
 	struct timespec start, end;
 	if (argc == 1){
-		sqlite3 *db = setup_db("large.sqlite");
+		sqlite3 *db = setup_db("data/large.sqlite");
     		clock_gettime(CLOCK_MONOTONIC, &start);
 		make_naive_range(db,"large","cent",-460000,6625000,20000,100000,0);
     		clock_gettime(CLOCK_MONOTONIC, &end);

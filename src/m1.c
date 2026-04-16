@@ -111,9 +111,6 @@ void partition_col_by_index_ranges(sqlite3 *db, char *tab, char *col,char *ind, 
     		sqlite3_step(meta);
     		sqlite3_reset(meta);
 
-		snprintf(ch,sizeof(ch), "CREATE INDEX idx_%s_%d ON %s(%s)",tab,i,bx,ind);
-		if(sqlite3_exec(db, ch,NULL,NULL,NULL)!=SQLITE_OK){printf("err: %s\n", sqlite3_errmsg(db));}
-
 	}
 	sqlite3_finalize(meta);
 }

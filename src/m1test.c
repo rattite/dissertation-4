@@ -49,7 +49,7 @@ int main(int argc, char *argv[]){
 		run_demo_query(db);
 		partition_col_by_index_ranges(db,"large","cent","arg1",r,base,4);
 		//do dummy query to warm up the database
-		for (int i=0;i<4;i++){
+		for (int i=0;i<100;i++){
     		clock_gettime(CLOCK_MONOTONIC, &start);
 		beter3(db, "large", "cent", "arg1", -460000, 6625000, 20000, 100000, base, 0,4);
     		clock_gettime(CLOCK_MONOTONIC, &end);
