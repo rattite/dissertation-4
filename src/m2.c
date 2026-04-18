@@ -287,6 +287,8 @@ void partition_help(sqlite3 *db, char *tab, char *col, char *ind, Node2 *start, 
 			sqlite3_bind_blob(ins_stmt,3,blob,blob_size,SQLITE_TRANSIENT);
 			sqlite3_step(ins_stmt);
 			sqlite3_finalize(ins_stmt);
+			gaiaFreeGeomColl(geom);
+
 	}
 	sqlite3_finalize(sel_stmt);
     	strcpy (sql, "COMMIT");

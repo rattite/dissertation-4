@@ -43,6 +43,7 @@ int main(int argc, char *argv[]){
 		fclose(extra_stream);
 		sqlite3_close(db);
 	}
+	spatialite_cleanup();
 	return 0;
 }
 

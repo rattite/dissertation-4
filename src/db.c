@@ -210,7 +210,6 @@ void add_index(sqlite3 *db, char *tab, char *col, rule *base, char *name, int de
 	snprintf(add, sizeof(add),"UPDATE %s SET %s = ? WHERE ogc_fid = ?",tab,name);
 
 	//adds the new column to the database
-	sqlite3_stmt *alter_stmt;
 	sqlite3_stmt *stmt;
 	sqlite3_stmt *add_stmt;
 	if(sqlite3_exec(db,sql,NULL,NULL,NULL)!=SQLITE_OK){printf("error: %s\n", sqlite3_errmsg(db));}

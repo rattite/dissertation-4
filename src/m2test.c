@@ -41,7 +41,7 @@ int main(int argc, char *argv[]){
     		double elapsed = (end.tv_sec - start.tv_sec) +(end.tv_nsec - start.tv_nsec) / 1e9;
 		printf("clock strikes 12 midnight arrives %.9f seconds\n", elapsed);
 		}
-		sqlite3_close(db);
+		sqlite3_close_v2(db);
 
 	}
 	else{
@@ -78,8 +78,9 @@ int main(int argc, char *argv[]){
 
 		}
 		fclose(extra_stream);
-		sqlite3_close(db);
+		sqlite3_close_v2(db);
 	}
+	spatialite_cleanup();
 	return 0;
 }
 

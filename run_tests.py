@@ -241,7 +241,7 @@ class m2_case(test_case):
         self.label = "Grid"
     @classmethod
     def get_param_grid(cls):
-        return {"ind_depth": [4,6,8], "min_leaf": [4,64,256]}
+        return {"ind_depth": [4,6,8], "min_leaf": [64,256]}
     def subp(self,filename:str, tab:str, col:str, queries_file:str):
         return subprocess.Popen(["bin/m2test",filename,tab,col,queries_file,self.ind_depth,self.min_leaf])
 
@@ -556,7 +556,7 @@ def rt(name,flag,reps):
     cases = []
     cases.append(naive_case.optimise(X)[0])
     cases.append(good_case.optimise(X)[0])
-
+    
     besti, alli = index_case.optimise(X)
     cases.append(besti)
     test_case.serialise_list("data/"+name+"/"+str(time.time())+"_"+str(flag)+".allind", alli)
@@ -566,7 +566,6 @@ def rt(name,flag,reps):
     cases.append(best1)
     test_case.serialise_list("data/"+name+"/"+str(time.time())+"_"+str(flag)+".all1", all1)
     graph_final_results(all1,name,0,flag)
-
     best2, all2 = m2_case.optimise(X)
     cases.append(best2)
     test_case.serialise_list("data/"+name+"/"+str(time.time())+"_"+str(flag)+".all2", all2)

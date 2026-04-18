@@ -61,6 +61,7 @@ int main(int argc, char *argv[]){
 		sqlite3_close(db);
 	}
 	printf("completed!\n");
+	spatialite_cleanup();
 	return 0;
 }
 

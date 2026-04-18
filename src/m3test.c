@@ -106,6 +106,7 @@ int main(int argc, char *argv[]){
 		}
 		sqlite3_close(db);
 	}
+	spatialite_cleanup();
 	return 0;
 }
 

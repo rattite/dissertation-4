@@ -9,8 +9,8 @@ void reset_db(sqlite3 *db, char *tab){
 	sqlite3_stmt *stmt;
 	const char *sql = "SELECT f_table_name, f_geometry_column FROM geometry_columns";
 	if (sqlite3_prepare_v2(db,sql,-1,&stmt,NULL)!=SQLITE_OK){printf("error: %s\n", sqlite3_errmsg(db));}
-	char **tables = malloc(1000*sizeof(char *));
-	char **cols = malloc(1000*sizeof(char *));
+	char **tables = malloc(2048*sizeof(char *));
+	char **cols = malloc(2048*sizeof(char *));
 	int count = 0;
 	while (sqlite3_step(stmt) == SQLITE_ROW){
 		const char *t = sqlite3_column_text(stmt,0);

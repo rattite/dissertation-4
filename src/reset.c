@@ -10,7 +10,7 @@ int main(int argc, char *argv[]){
 	//failure to provide the correct value to argv[2] will result in the deletion of your database. so be careful!
 	sqlite3 *db = setup_db(argv[1]);
 	reset_db(db,argv[2]);
-	destroy_part_structure(db,argv[2],256);
+	destroy_part_structure(db,argv[2],288);
 	sqlite3_close(db);
 	printf("reset!\n");
 	return 0;
